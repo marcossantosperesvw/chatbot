@@ -1,0 +1,8 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Chatbot Project
+
+  SAM Template for a chatbot project with backend and frontend.
+
+# More resources can be added here as needed.
