@@ -2,13 +2,23 @@
 
 import { useState, useEffect } from "react";
 
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+).replace(/\/$/, "");
+
 export default function Home() {
   const [status, setStatus] = useState<string>("Conectando...");
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/health")
-      .then((res) => res.json())
-      .then((data) => setStatus(data.message))
+    fetch(`${API_URL}/api/health`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Backend respondeu com status ${response.status}`);
+        }
+
+        return response.json();
+      })
+      .then((data: { message: string }) => setStatus(data.message))
       .catch(() => setStatus("Erro ao conectar com o backend."));
   }, []);
 
