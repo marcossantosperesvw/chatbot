@@ -1,6 +1,7 @@
 [project]
 name = "backend"
 version = "0.1.0"
+package-mode = false
 description = "Add your description here"
 readme = "README.md"
 authors = [
