@@ -34,7 +34,7 @@ class ChatRequest(BaseModel):
 
 class AssistantMessage(BaseModel):
     role: Literal["assistant"] = "assistant"
-    content: str = Field(min_length=1)
+    content: MessageContent
 
 
 class ChatResponse(BaseModel):

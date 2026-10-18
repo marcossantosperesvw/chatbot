@@ -65,7 +65,7 @@ export function Chat() {
           </div>
         </div>
         <span className="rounded-full border border-indigo-400/20 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-200">
-          Demonstração
+          Assistente IA
         </span>
       </header>
 
@@ -133,8 +133,8 @@ export function Chat() {
                 Qual será a próxima aventura?
               </h2>
               <p className="mt-4 max-w-md text-sm leading-6 text-slate-400">
-                Conte o que você gosta de jogar ou faça uma pergunta. Nesta
-                demonstração, você receberá uma resposta simulada.
+                Conte o que você gosta de jogar ou faça uma pergunta.
+                Suas preferências nesta conversa ajudam nas recomendações.
               </p>
               <div className="mt-7 flex max-w-xl flex-wrap justify-center gap-2">
                 {SUGGESTIONS.map((suggestion) => (
@@ -171,6 +171,8 @@ export function Chat() {
         </section>
       </div>
       <p className="mt-4 text-center text-xs leading-5 text-slate-500">
+        Respostas geradas por IA podem conter erros. O conteúdo da conversa atual é enviado à OpenAI.
+        {" "}
         As conversas são recuperadas ao atualizar esta aba. Fechar a aba normalmente encerra a sessão.
       </p>
     </main>
