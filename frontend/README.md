@@ -44,8 +44,9 @@ deve conter credenciais. Chaves da OpenAI pertencem exclusivamente ao backend.
 - Menu recolhível em telas pequenas, acessível pelo botão "Conversas".
 - Layout responsivo, rótulos acessíveis, foco visível e movimento reduzido.
 
-O backend ainda responde com texto simulado. O histórico enviado não é
-interpretado por um modelo nesta etapa. As conversas são recuperadas ao atualizar
+O backend usa o OpenAI Agents SDK e considera o histórico da conversa selecionada.
+Configure chave e modelo conforme o [guia do backend](../backend/README.md).
+As conversas são recuperadas ao atualizar
 a página; fechar a aba normalmente encerra a sessão de armazenamento.
 
 ## Persistência da sessão
@@ -115,10 +116,9 @@ e são canceladas quando o componente é desmontado.
   para emojis.
 - Até 50 mensagens anteriores por requisição. Ao ultrapassar esse limite, a
   interface solicita uma nova conversa; não descarta o histórico silenciosamente.
-- O simulador pode devolver uma resposta maior que 4.000 caracteres ao repetir
-  uma mensagem longa. Essa resposta permanece visível, mas não pode ser enviada
-  no histórico do próximo turno. A interface avisa e permite iniciar uma nova
-  conversa. A compatibilidade desses limites poderá ser revista na etapa de IA.
+- O backend agora rejeita saídas da IA acima de 4.000 caracteres. Conversas antigas
+  da etapa simulada podem conter respostas maiores; a interface preserva esses
+  dados e orienta iniciar uma nova conversa, sem apagar conteúdo silenciosamente.
 
 Mensagens são exibidas como texto. Conteúdo HTML recebido da API não é executado.
 
@@ -142,7 +142,7 @@ rascunhos e chegada de respostas/erros após trocar a conversa selecionada.
 ## Roteiro de verificação manual
 
 1. Abra a interface com o backend em execução e envie uma mensagem pelo botão.
-   Confira o balão do usuário e a resposta simulada.
+   Confira o balão do usuário e a resposta da IA (este teste usa sua API e pode ter custo).
 2. Envie outra mensagem usando Enter. Na aba Network do navegador, verifique
    o mesmo `conversation_id`, o histórico anterior e a mensagem atual separada.
 3. Use Shift+Enter e confira uma quebra de linha. Tente enviar somente espaços:
@@ -165,7 +165,7 @@ rascunhos e chegada de respostas/erros após trocar a conversa selecionada.
 
 ## Próximas etapas
 
-Integração com OpenAI e RAG, conforme aprovação de cada etapa. Persistência entre
+RAG e catálogo externo, conforme aprovação de cada etapa. Persistência entre
 sessões e contas de usuário podem ser avaliadas futuramente. O fluxo Git usa
 branches `feature/*` a partir de `develop`, com
 commits em português no formato Conventional Commits. Após testes e revisão,

@@ -1,12 +1,15 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.chat import router as chat_router
+from app.core.logging import configure_agent_logging
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+configure_agent_logging()
 
 CORS_ORIGINS = [
     origin.strip()

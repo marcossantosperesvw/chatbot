@@ -55,6 +55,14 @@ test("trata erro HTTP mesmo quando o corpo não é JSON", async () => {
   await assert.rejects(sendChatMessage(request), /Não foi possível processar/);
 });
 
+test("explica indisponibilidade e timeout da IA sem expor detail", async () => {
+  for (const [status, message] of [[503, /Verifique a configuração do backend/], [504, /demorou para responder/]]) {
+    mock.method(globalThis, "fetch", async () => Response.json({ detail: "segredo" }, { status }));
+    await assert.rejects(sendChatMessage(request), message);
+    mock.restoreAll();
+  }
+});
+
 test("rejeita resposta bem-sucedida com JSON malformado", async () => {
   mock.method(globalThis, "fetch", async () => new Response("<html>Erro</html>"));
   await assert.rejects(sendChatMessage(request), /resposta inválida/);

@@ -52,6 +52,12 @@ export async function sendChatMessage(
         "A mensagem ou o histórico não atende aos limites do chat. Revise o texto ou inicie uma nova conversa.",
       );
     }
+    if (response.status === 503) {
+      throw new Error("A inteligência artificial está indisponível. Verifique a configuração do backend.");
+    }
+    if (response.status === 504) {
+      throw new Error("A inteligência artificial demorou para responder. Tente novamente.");
+    }
     throw new Error("Não foi possível processar a mensagem. Tente novamente.");
   }
 

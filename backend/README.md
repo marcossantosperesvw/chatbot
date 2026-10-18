@@ -1,11 +1,50 @@
 # Backend
 
-API do chatbot construída com FastAPI.
+API do chatbot construída com FastAPI e OpenAI Agents SDK para Python.
 
 ## Configuração
 
-Copie `.env.example` para `.env` e ajuste `CORS_ORIGINS`. A variável recebe uma
-lista de origens separadas por vírgulas, por exemplo:
+### Configurar a OpenAI — passo a passo
+
+1. Entre na [OpenAI Platform](https://platform.openai.com/) e selecione seu projeto.
+2. Crie uma chave em [API keys](https://platform.openai.com/api-keys), com permissão
+   de geração de respostas. Verifique o faturamento, saldo e limites do projeto
+   antes de usar a API. Não presuma que sua assinatura do ChatGPT habilita esta aplicação.
+3. Na pasta `backend/`, copie `.env.example` para `.env` **somente se ainda não
+   existir**. Não sobrescreva sua configuração anterior:
+
+   ```bash
+   cp -n .env.example .env
+   ```
+
+4. Edite `.env` localmente, sem compartilhar a chave no chat ou no Git:
+
+   ```dotenv
+   OPENAI_API_KEY=SUA_CHAVE_REAL_AQUI
+   OPENAI_MODEL=ID_DO_MODELO_ESCOLHIDO
+   OPENAI_TIMEOUT_SECONDS=25
+   OPENAI_MAX_OUTPUT_TOKENS=800
+   ```
+
+   Os valores acima de chave/modelo são marcadores: substitua ambos. Escolha um
+   modelo de texto acessível no seu projeto e compatível com a Responses API,
+   consultando o [catálogo oficial](https://developers.openai.com/api/docs/models).
+   Não há modelo padrão, para evitar uma escolha de custo implícita. Modelos com
+   raciocínio podem precisar de outro orçamento de tokens/latência; a compatibilidade
+   efetiva precisa ser conferida com o modelo escolhido.
+5. Instale as dependências e inicie a API com os comandos abaixo. O `uv sync`
+   instala `openai-agents`; o import Python é `agents`. Não instale um pacote
+   chamado `agents`. Não é necessário criar um agente no painel: ele é definido
+   em `app/agents/game_agent.py`, conforme o
+   [quickstart oficial do SDK](https://developers.openai.com/api/docs/guides/agents/quickstart).
+6. Reinicie o backend após mudar `.env`. O arquivo é carregado a partir da pasta
+   `backend/`; variáveis já exportadas no terminal têm precedência sobre ele.
+
+`OPENAI_TIMEOUT_SECONDS` aceita de 1 a 25 segundos e `OPENAI_MAX_OUTPUT_TOKENS`
+aceita de 16 a 2048 tokens. Esses limites não equivalem a um teto financeiro:
+o histórico também consome tokens e chamadas que falham ou expiram podem ter custo.
+
+`CORS_ORIGINS` recebe uma lista de origens separadas por vírgulas, por exemplo:
 
 ```dotenv
 CORS_ORIGINS=https://chat.exemplo.com,https://admin.exemplo.com
@@ -14,8 +53,8 @@ CORS_ORIGINS=https://chat.exemplo.com,https://admin.exemplo.com
 ## Executar localmente
 
 ```bash
-uv sync
-uv run uvicorn app.main:app --reload
+uv sync --locked
+uv run --locked uvicorn app.main:app --reload
 ```
 
 A API fica disponível em <http://localhost:8000>. Para verificar o serviço,
@@ -23,8 +62,8 @@ acesse `GET /api/health`.
 
 ## Contrato do chat
 
-`POST /api/chat` recebe JSON e devolve uma resposta simulada. Esta etapa valida
-a comunicação HTTP; ainda não chama a OpenAI nem faz consultas RAG.
+`POST /api/chat` recebe JSON e executa um agente via Responses API. Ainda não há
+consultas RAG, busca na web ou catálogo externo.
 
 ### Requisição
 
@@ -49,9 +88,9 @@ a comunicação HTTP; ainda não chama a OpenAI nem faz consultas RAG.
 - A mensagem atual deve aparecer somente em `message`, sem repetição no histórico.
 - Campos desconhecidos são rejeitados, inclusive dentro das mensagens anteriores.
 
-O histórico é validado, mas ainda não é interpretado pelo simulador. Nesta etapa,
-o backend não armazena conversas. O salvamento na sessão da aba será implementado
-separadamente no frontend.
+O histórico validado fornece contexto ao agente. O backend não armazena conversas:
+o frontend mantém mensagens e rascunhos no `sessionStorage` da aba. Não usamos
+sessões persistentes do SDK nem IDs de conversas hospedadas na OpenAI.
 
 ### Resposta de sucesso — HTTP 200
 
@@ -60,13 +99,15 @@ separadamente no frontend.
   "conversation_id": "550e8400-e29b-41d4-a716-446655440000",
   "message": {
     "role": "assistant",
-    "content": "Resposta simulada: recebi sua mensagem «Quero recomendações de jogos cooperativos.». A integração com inteligência artificial ainda não está habilitada."
+    "content": "Você joga em qual plataforma e com quantas pessoas?"
   }
 }
 ```
 
 O identificador devolvido permite associar a resposta à conversa correta. O
 texto é retornado como conteúdo, não como HTML para execução no navegador.
+O conteúdo real varia. Respostas vazias, não textuais ou acima de 4.000 caracteres
+são rejeitadas, sem truncamento silencioso, para manter o próximo turno válido.
 
 ### Erros
 
@@ -77,10 +118,16 @@ texto é retornado como conteúdo, não como HTML para execução no navegador.
   português a partir dessas informações.
 - **HTTP 500:** falha inesperada durante o processamento. O campo `detail`
   contém o texto `Não foi possível processar a mensagem. Tente novamente.`.
-  Detalhes técnicos ficam no log do servidor.
+  O log registra somente a categoria da exceção e o identificador da conversa.
+- **HTTP 502:** falha de comunicação/provedor ou resposta inválida da IA, incluindo
+  chave recusada, modelo inacessível ou cota excedida. Confira credenciais,
+  acesso ao modelo, saldo e limites no painel; os detalhes do provedor não são expostos.
+- **HTTP 503:** chave/modelo ausentes ou configuração local inválida. Corrija `.env`
+  e reinicie a API. O health check continua disponível, mas não testa a OpenAI.
+- **HTTP 504:** timeout da IA. O frontend preserva o rascunho, sem reenvio automático.
 
 O cliente deve tratar `detail` conforme o status HTTP: é uma lista no erro 422
-e um texto no erro 500.
+e um texto nos demais erros documentados.
 
 ### Testar manualmente
 
@@ -92,8 +139,38 @@ curl -i http://localhost:8000/api/chat \
   -d '{"conversation_id":"550e8400-e29b-41d4-a716-446655440000","message":"Quero um jogo cooperativo."}'
 ```
 
-Troque `message` por um texto vazio para observar o erro 422. O endpoint de chat
-não exige chave de API nesta etapa.
+Troque `message` por um texto vazio para observar o erro 422. Uma requisição válida
+ao chat usa sua chave no backend e pode gerar cobrança. Não faça testes reais em loop.
+
+Na interface, diga "Jogo no PC e gosto de cooperação" e depois "O que recomenda?".
+Confira se a resposta considera o contexto. Crie outra conversa e verifique que
+suas mensagens não contêm o histórico da anterior; isso é garantido pelo envio
+separado, não por uma suposta memória global do agente.
+
+## Organização e privacidade
+
+- `api/`: valida o contrato e traduz falhas para HTTP.
+- `services/chat_service.py`: monta histórico + mensagem atual uma única vez,
+  aplica timeout e valida a saída. Abre e fecha um cliente assíncrono por requisição;
+  é simples para o MVP, embora reaproveitar conexões possa ser útil depois.
+- `agents/game_agent.py`: define instruções, modelo e limite de geração. Um agente
+  basta nesta etapa; não há ferramentas, handoffs ou execução autônoma de ações.
+- `core/config.py`: lê e valida configurações, protegendo a representação da chave.
+- `core/errors.py` e `core/logging.py`: falhas classificadas e logs do SDK sem
+  mensagens brutas do provedor. Não habilite logs de depuração HTTP com dados reais.
+
+O histórico da conversa selecionada é enviado à OpenAI a cada turno. Tracing do
+SDK está desativado e enviamos `store=False`. Isso **não significa retenção zero**
+nem elimina políticas de monitoramento do provedor; consulte os
+[controles de dados oficiais](https://developers.openai.com/api/docs/guides/your-data).
+Não envie informações sensíveis. `.env` é ignorado pelo Git; nunca use
+`NEXT_PUBLIC_OPENAI_API_KEY` nem coloque uma chave em arquivos de exemplo.
+
+Sem login e sem proteção contra abuso, esta versão é para desenvolvimento local.
+CORS não autentica clientes. Antes de publicar, precisamos aprovar limites de
+requisições, proteção da API e controle de custos. Até 50 mensagens de 4.000
+caracteres ainda podem consumir muito contexto; sumarização/limite total de tokens
+serão decisões futuras, sem descarte silencioso nesta entrega.
 
 ## Testes automatizados
 
@@ -101,7 +178,7 @@ Na pasta `backend/`:
 
 ```bash
 uv sync --locked
-uv run --locked pytest
+uv run --locked pytest -q -W error
 ```
 
 As dependências de teste (`pytest` e `httpx2`) ficam no grupo `dev`. O `httpx2`
@@ -109,6 +186,11 @@ As dependências de teste (`pytest` e `httpx2`) ficam no grupo `dev`. O `httpx2`
 A suíte usa
 `TestClient` para exercitar a API sem iniciar um servidor de rede. Ela verifica
 o contrato, os limites de entrada, as falhas inesperadas e o health check.
+Os testes de IA executam o próprio SDK com transporte HTTP falso, chave fictícia,
+sem rede ou cobrança, verificando contexto, isolamento, erros, logs e fechamento
+do cliente. O cliente `openai` está limitado à faixa 2.26: a versão 2.54 exigia
+um campo de uso de tokens que o Agents SDK 0.13.6 não preenchia. Atualize essa
+combinação somente após repetir os testes; `uv.lock` fixa a combinação verificada.
 
 ## Fluxo de desenvolvimento
 
@@ -124,5 +206,6 @@ tecnologias, conceitos e justificativa das decisões, aguardando aprovação.
 Depois da entrega, explique as alterações, o funcionamento, como executar e
 testar, e as melhorias futuras. Cada aprovação autoriza somente a etapa descrita.
 
-Melhorias seguintes, sujeitas à aprovação por etapa: interface de chat,
-histórico na sessão do navegador, integração com OpenAI e recuperação RAG.
+Melhorias seguintes, sujeitas à aprovação por etapa: recuperação RAG, catálogo
+externo, streaming e implantação. A evolução de infraestrutura está descrita em
+[Arquitetura](../docs/architecture.md).
