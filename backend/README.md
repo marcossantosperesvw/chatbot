@@ -224,10 +224,23 @@ do cliente. O cliente `openai` está limitado à faixa 2.26: a versão 2.54 exig
 um campo de uso de tokens que o Agents SDK 0.13.6 não preenchia. Atualize essa
 combinação somente após repetir os testes; `uv.lock` fixa a combinação verificada.
 
-Os testes de catálogo e agente também verificam filtros combinados, tratamento
-de filtros desconhecidos, cache, limite por mensagem, URLs e o ciclo de chamada
-de ferramenta. Não avaliam automaticamente a qualidade editorial de um modelo
-real: siga o roteiro manual do guia antes de aprovar a integração.
+## Avaliar perguntas e recomendações do agente
+
+O agente investiga pedidos abertos com uma pergunta curta por vez, usando as
+respostas e o histórico para decidir o próximo passo. Quando já há contexto
+suficiente, recomenda diretamente; se o usuário preferir sugestões imediatas,
+respeita essa escolha e indica eventuais suposições. Plataforma, estilo, orçamento,
+dificuldade e modo de jogo não formam um questionário obrigatório.
+
+As regras e exemplos ficam em `app/agents/game_agent.py`, na constante
+`INSTRUCTIONS`. Ajustá-las muda o comportamento solicitado ao modelo, sem treinar
+um modelo novo ou adicionar dados externos. A redação das respostas pode variar.
+
+Use o [roteiro de avaliação colaborativa](../docs/agent-evaluation.md) para testar
+pedidos ambíguos, investigação gradual, contexto suficiente, correções e conversas
+independentes. Ele também explica como registrar suas observações para decidirmos
+os próximos ajustes juntos. Os testes automatizados continuam sem custo de API;
+avaliar respostas reais na interface usa os créditos da OpenAI.
 
 ## Fluxo de desenvolvimento
 
