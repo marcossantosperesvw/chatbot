@@ -2,13 +2,19 @@
 
 ## Objetivo e decisões aprovadas
 
-Melhorar pedidos abertos por investigação gradual: uma pergunta curta por vez,
-escolhida a partir do contexto, até haver informação suficiente para recomendar.
-O agente deve responder diretamente quando o pedido já estiver claro e aceitar
-quem prefere receber sugestões sem responder perguntas.
+Melhorar pedidos abertos por investigação gradual: uma ou duas perguntas curtas,
+escolhidas a partir do contexto, até haver informação suficiente para consultar
+candidatos. Recomendações exigem evidência para os requisitos essenciais.
+O agente não deve prolongar a investigação se o pedido já estiver claro, mas um
+pedido de sugestões imediatas não autoriza inventar preferências, evidências ou
+relaxar critérios sem consentimento.
 
-As regras e os exemplos estão em `backend/app/agents/game_agent.py`, na constante
-`INSTRUCTIONS`. É o primeiro lugar para discutir e ajustar o comportamento.
+As regras e os exemplos estão em
+[`backend/app/agents/game_agent.md`](../backend/app/agents/game_agent.md).
+Esse é o arquivo para discutir e ajustar o comportamento. O módulo
+`backend/app/agents/game_agent.py` apenas carrega e valida o texto, configura o
+agente e fornece o conteúdo em `Agent(instructions=...)`. Este roteiro não é
+carregado como instruções do chatbot.
 Não há classificador adicional, formulário fixo, novas dependências ou alteração
 no contrato HTTP. O histórico já enviado pela aplicação sustenta a conversa.
 
@@ -39,8 +45,13 @@ cd /home/marcos/chatbot/backend
 uv run --locked uvicorn app.main:app --reload
 ```
 
-Se o servidor já estiver em execução com `--reload`, confirme que recarregou após
-a alteração do agente. Se estiver sem reload, reinicie-o para carregar as regras.
+Ao editar somente `game_agent.md`, salve em UTF-8: o backend relê o arquivo a cada
+nova requisição, mesmo sem `--reload`. Uma requisição em andamento mantém o texto
+que já recebeu. Alterações no código Python exigem reload ou reinício.
+Se o Markdown estiver ausente, vazio ou ilegível, o chat retorna HTTP 503 sem
+chamar o modelo. Não coloque credenciais ou notas privadas nele: todo o conteúdo
+é enviado como instruções. Os limites de ferramentas e a validação de URLs
+continuam no código; editar o prompt não adiciona funcionalidades.
 
 Em outro terminal, caso o frontend ainda não esteja em execução:
 
@@ -61,8 +72,9 @@ testes automatizados sem uma ação sua.
 
 Envie: `Quero um jogo de construção.`
 
-Esperado: uma pergunta que diferencie intenções, como construir cidades, bases
-de sobrevivência ou criar livremente. O agente não deve escolher Fortnite nem
+Esperado: uma ou duas perguntas curtas que diferenciem intenções, como construir
+cidades, bases de sobrevivência ou criar livremente, e esclareçam a plataforma
+quando necessário. O agente não deve escolher Fortnite nem
 qualquer outro jogo antes de entender qual experiência foi pedida.
 
 ### C2 — Investigação gradual
@@ -70,7 +82,7 @@ qualquer outro jogo antes de entender qual experiência foi pedida.
 Na mesma conversa de C1, responda `Construir cidades.`. Depois, responda à próxima
 pergunta com uma preferência sua e continue até receber sugestões.
 
-Esperado: uma pergunta por resposta enquanto faltar informação relevante, sem
+Esperado: uma ou duas perguntas curtas enquanto faltar informação relevante, sem
 repetir o tipo de construção já informado. Deve chegar a recomendações usando
 as respostas, sem exigir uma lista fixa de preferências. Registre a sequência
 completa para discutirmos se fez perguntas demais ou parou cedo demais.
@@ -80,9 +92,12 @@ completa para discutirmos se fez perguntas demais ou parou cedo demais.
 Em nova conversa, envie:
 `Quero construir cidades no PC, sozinho, com foco em gestão e sem combate.`
 
-Esperado: recomendações diretas, com justificativa ligada ao pedido. Não deve
-perguntar novamente plataforma, modo ou preferência sobre combate, nem exigir
-orçamento ou dificuldade apenas para completar um formulário.
+Esperado: consultar candidatos sem repetir plataforma, modo ou preferência sobre
+combate, nem exigir orçamento ou dificuldade apenas para completar um formulário.
+Recomendar somente se houver evidência suficiente, no registro do próprio jogo,
+para os requisitos essenciais. Se "sem combate" não puder ser confirmado, explicar
+a limitação e perguntar como prosseguir. A ausência de combate no resumo não
+comprova que o jogo não tem combate; não oferecer uma aproximação sem autorização.
 
 ### C4 — Correção de uma preferência
 
@@ -97,23 +112,30 @@ tratar combate como preferência ainda válida nem repetir a pergunta sobre plat
 Em nova conversa, envie:
 `Quero um jogo de construção. Não quero responder perguntas agora; me dê três sugestões.`
 
-Esperado: sugestões imediatas cobrindo interpretações diferentes, com suposições
-identificadas. Não deve insistir em uma pergunta antes de ajudar.
+Esperado: não transformar o pedido em um questionário obrigatório, mas também não
+inventar plataforma ou interpretar construção arbitrariamente. Se faltarem dados
+para uma consulta útil, explicar a limitação e pedir apenas o esclarecimento que
+realmente muda a seleção. Se puder consultar candidatos sem inventar preferências,
+recomendar somente os retornados com evidência suficiente; não completar três
+sugestões com jogos não confirmados só para atingir a quantidade solicitada.
 
 ### C6 — Ausência de preferência
 
 Em nova conversa, envie `Quero um jogo para PC.`. Responda à pergunta do agente
 com `Tanto faz esse aspecto, pode sugerir algumas opções variadas.`.
 
-Esperado: aceitar a ausência de preferência e recomendar opções, usando PC como
-contexto conhecido. Não deve insistir para obter uma resposta mais específica.
+Esperado: aceitar a ausência de preferência e consultar opções usando PC como
+contexto conhecido, sem inventar gênero ou modo. Recomendar candidatos confirmados
+pelo catálogo; explicar falhas ou falta de resultados sem substituí-los por jogos
+de memória. Não insistir para obter uma preferência que o usuário não possui.
 
 ### C7 — Pergunta factual clara
 
 Em nova conversa, envie: `Qual é a diferença entre modo criativo e sobrevivência no Minecraft?`
 
 Esperado: explicação direta sobre a diferença. Não deve perguntar orçamento,
-plataforma ou estilo favorito antes de explicar.
+plataforma ou estilo favorito antes de explicar. Se usar conhecimento geral,
+identificar essa origem e não atribuir a explicação a uma consulta IGDB inexistente.
 
 ### C8 — Conversas independentes
 
@@ -129,12 +151,18 @@ o histórico de A sem perguntar outra vez as preferências que já conhece.
 Avalie cada resposta por intenção, sem exigir uma frase literal:
 
 - Pergunta quando a informação faltante realmente muda a recomendação.
-- Explora um aspecto por vez, com alternativas compreensíveis quando úteis.
+- Faz uma ou duas perguntas curtas, com alternativas compreensíveis quando úteis.
 - Usa o histórico e respeita correções, sem inventar preferências.
-- Para de investigar quando já consegue ajudar ou quando o usuário pede sugestões.
-- Explica por que as recomendações atendem ao pedido; admite incertezas.
+- Para de investigar quando já consegue consultar candidatos, sem preencher um
+  questionário fixo; pedir sugestões não dispensa confirmar requisitos essenciais.
+- Recomenda somente jogos consultados com evidência suficiente, mantém cada fato
+  associado ao próprio registro e admite incertezas. Só flexibiliza critérios
+  essenciais se o usuário aceitar.
 - Mantém as limitações atuais: não afirma consultar a web e não inventa URLs,
-  preços, fontes ou disponibilidade. Lojas, vídeos e RAG serão tarefas posteriores.
+  preços, fontes ou disponibilidade. Links de lojas podem ser enviados quando
+  retornados pela ferramenta na requisição atual; não comprovam estoque ou preço.
+  Cards de lojas, vídeos e RAG serão tarefas posteriores.
+- Usa texto simples, sem asteriscos de negrito ou links Markdown na resposta.
 
 Marque `Atendeu`, `Parcial` ou `Não atendeu` e registre a evidência. Um sucesso
 isolado não garante consistência, e um teste com transporte falso não substitui

@@ -226,15 +226,23 @@ combinação somente após repetir os testes; `uv.lock` fixa a combinação veri
 
 ## Avaliar perguntas e recomendações do agente
 
-O agente investiga pedidos abertos com uma pergunta curta por vez, usando as
+O agente investiga pedidos abertos com uma ou duas perguntas curtas, usando as
 respostas e o histórico para decidir o próximo passo. Quando já há contexto
-suficiente, recomenda diretamente; se o usuário preferir sugestões imediatas,
-respeita essa escolha e indica eventuais suposições. Plataforma, estilo, orçamento,
-dificuldade e modo de jogo não formam um questionário obrigatório.
+suficiente, consulta candidatos e recomenda somente quando houver evidência para
+os requisitos essenciais. Pedir sugestões imediatas não autoriza inventar
+preferências ou ignorar critérios. Aproximações exigem que o usuário aceite
+flexibilizá-los. Plataforma, estilo, orçamento, dificuldade e modo de jogo não
+formam um questionário obrigatório.
 
-As regras e exemplos ficam em `app/agents/game_agent.py`, na constante
-`INSTRUCTIONS`. Ajustá-las muda o comportamento solicitado ao modelo, sem treinar
-um modelo novo ou adicionar dados externos. A redação das respostas pode variar.
+As regras e exemplos ficam em [`app/agents/game_agent.md`](app/agents/game_agent.md).
+O módulo `app/agents/game_agent.py` lê esse arquivo em UTF-8 a cada criação do
+agente e passa o texto para `Agent(instructions=...)`. Salvar o Markdown é suficiente
+para a próxima requisição; não é necessário reiniciar ao editar somente esse arquivo.
+Uma requisição em andamento continua com as instruções já carregadas. Ajustar o
+texto muda o comportamento solicitado ao modelo, sem treinar um modelo novo ou
+adicionar dados externos. A redação das respostas e a obediência podem variar.
+O arquivo deve acompanhar o backend no deploy; se ausente, vazio ou ilegível, o
+chat retorna HTTP 503, sem fallback silencioso para regras antigas.
 
 Use o [roteiro de avaliação colaborativa](../docs/agent-evaluation.md) para testar
 pedidos ambíguos, investigação gradual, contexto suficiente, correções e conversas
@@ -256,6 +264,7 @@ tecnologias, conceitos e justificativa das decisões, aguardando aprovação.
 Depois da entrega, explique as alterações, o funcionamento, como executar e
 testar, e as melhorias futuras. Cada aprovação autoriza somente a etapa descrita.
 
-Melhorias seguintes, sujeitas à aprovação por etapa: ferramenta de consulta ao
-catálogo pelo agente, recuperação RAG, streaming e implantação. A evolução de infraestrutura está descrita em
+Melhorias seguintes, sujeitas à aprovação por etapa: recuperação RAG, streaming
+e implantação. A ferramenta de catálogo já está integrada ao agente.
+A evolução de infraestrutura está descrita em
 [Arquitetura](../docs/architecture.md).
