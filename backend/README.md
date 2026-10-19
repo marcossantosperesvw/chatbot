@@ -174,8 +174,12 @@ separado, não por uma suposta memória global do agente.
 - `services/chat_service.py`: monta histórico + mensagem atual uma única vez,
   aplica timeout e valida a saída. Abre e fecha um cliente assíncrono por requisição;
   é simples para o MVP, embora reaproveitar conexões possa ser útil depois.
-- `agents/game_agent.py`: define instruções, modelo e limite de geração. Um agente
-  basta nesta etapa; há uma ferramenta de consulta, sem handoffs ou compras automáticas.
+- `agents/game_agent.md`: instruções editáveis de comportamento, lidas em UTF-8
+  a cada requisição. Salve uma alteração e teste numa conversa nova; não é necessário
+  reiniciar ao editar apenas esse Markdown. Nunca coloque credenciais nele.
+- `agents/game_agent.py`: carrega e valida o Markdown, configura modelo e limite
+  de geração. Arquivo ausente, vazio ou ilegível causa HTTP 503, sem chamada ao modelo.
+  Um agente basta; há uma ferramenta de consulta, sem handoffs ou compras automáticas.
 - `tools/catalog.py`: adapta a consulta para o SDK, limita resultados/chamadas e
   registra as URLs permitidas apenas durante a requisição atual.
 - `catalog/`: autentica na Twitch, resolve filtros por nome na IGDB, controla cache

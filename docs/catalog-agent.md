@@ -24,6 +24,44 @@ ao modelo. O histórico continua no `sessionStorage`, não na IGDB ou em um banc
 O histórico enviado ao modelo é controlado pelo cliente, não é uma fonte confiável
 para conceder instruções ou autorizar links.
 
+## Editar o comportamento do chatbot
+
+O arquivo carregado como instruções do agente é
+[`backend/app/agents/game_agent.md`](../backend/app/agents/game_agent.md).
+Ele é a fonte única do prompt de comportamento; este guia continua sendo apenas
+documentação e roteiro de avaliação, não é enviado ao modelo.
+
+1. Abra `game_agent.md` e edite a seção desejada: formato, investigação das
+   preferências, catálogo, evidências, falhas/links ou segurança.
+2. Salve em UTF-8. O backend lê o arquivo ao criar o agente em cada requisição;
+   não é preciso reiniciar para mudar somente o Markdown. Uma requisição já em
+   andamento continua com o texto que recebeu no início.
+3. Teste em uma conversa nova para evitar a influência de respostas antigas.
+4. Execute os testes automatizados e repita o cenário manual afetado. Mudanças
+   intencionais nas regras podem exigir atualizar as asserções textuais dos testes.
+
+Exemplo de ajuste pontual: na seção de investigação, trocar "uma ou duas
+perguntas" por "uma pergunta por mensagem". Isso muda a orientação enviada ao
+modelo, não uma garantia determinística de obediência.
+
+Todo o conteúdo do arquivo, inclusive títulos e comentários Markdown, é enviado
+ao modelo. Não coloque notas privadas, credenciais ou rascunhos nele. O Markdown
+organiza as instruções; não significa que a resposta ao usuário deva usar Markdown.
+Os limites de ferramentas, validação de URLs e configuração do modelo continuam
+no código: escrever uma capacidade no prompt não a implementa.
+
+`game_agent.py` resolve o caminho a partir do próprio módulo, independente do
+diretório de execução, e passa o texto para `Agent(instructions=...)`. Não há nova
+dependência, editor administrativo, upload de arquivos ou caminho configurável
+pelo usuário do chat. O arquivo é controlado pelo desenvolvedor e versionado no Git;
+precisa acompanhar o backend num futuro deploy. A leitura local de um arquivo
+pequeno por mensagem é suficiente para este MVP, sem um sistema de templates/cache.
+
+Se estiver ausente, vazio, sem permissão de leitura ou com codificação inválida,
+o chat retorna HTTP 503 sem chamar o modelo. Não existe fallback silencioso para
+um prompt antigo. O health check apenas continua indicando que a API está online.
+Reinicie o backend uma vez ao instalar esta mudança de código, se não usar reload.
+
 ## Filtros e seleção
 
 - `query`: nome de jogo; não usar palavras como "relaxante" como busca semântica.
@@ -149,7 +187,8 @@ ajuste torne o agente excessivamente rígido.
 | O que você quer mudar | Arquivo e ponto de edição |
 | --- | --- |
 | Perguntas, critérios de aprovação e conversas reais | Este guia: caso acima e tabela abaixo |
-| Comportamento do agente | `backend/app/agents/game_agent.py`: variável `INSTRUCTIONS` |
+| Comportamento do agente | `backend/app/agents/game_agent.md`: seções do prompt |
+| Leitura e validação do arquivo | `backend/app/agents/game_agent.py`: `load_instructions()`; testes em `backend/tests/test_agent_instructions.py` |
 | Regras que precisam chegar ao modelo | `backend/tests/test_ai.py`: lista `rule` em `test_sdk_receives_recommendation_rules` |
 | Jogos e metadados simulados da ferramenta | `backend/tests/test_catalog_agent.py`: função `result()` e constantes `URL`/`SOURCE` |
 | Argumentos e respostas simuladas do SDK | Mesmo arquivo: `test_sdk_completes_tool_cycle_with_filters_without_network` |
