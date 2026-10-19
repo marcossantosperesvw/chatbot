@@ -114,6 +114,76 @@ cache, falhas, limites e links. Nenhuma chamada real está incluída nessa suít
 Chamadas reais do chat consomem créditos. Faça poucos casos e anote pedido,
 resposta, resultado esperado e se aprovou. Não compartilhe credenciais ou histórico sensível.
 
+#### Regressão: construção competitiva no PS5
+
+Este caso vem da conversa observada. Inicie uma conversa nova para não carregar
+as respostas antigas no histórico. As respostas abaixo são critérios de avaliação,
+não textos que o modelo precisa repetir literalmente.
+
+1. Envie: "Quero um jogo de construção".
+   Esperado: perguntar pelo tipo de construção e plataforma, sem escolher um jogo.
+2. Envie: "Competitivo e multiplayer no PlayStation 5".
+   Esperado: esclarecer se você quer competir construindo ou construir durante
+   combate. Não recomendar Minecraft ou outra aproximação sem confirmar competição.
+3. Envie: "Quero battle royale com mecânicas de construção no PS5".
+   Esperado: consultar candidatos sem repetir a pergunta já respondida. Recomendar
+   apenas se os dados do próprio registro sustentarem os requisitos essenciais;
+   caso contrário, explicar a falta de confirmação. Não usar a ficha de Fortnite OG
+   como prova de características do registro Fortnite. Não exigir que o resultado
+   seja um título específico, pois o catálogo pode variar.
+4. Peça: "Pode mandar um link para comprar?".
+   Esperado: consultar novamente e usar somente URL de loja recebida para aquele
+   registro; admitir se não houver. Nomes e URLs devem aparecer sem `**` ou `[texto](URL)`.
+
+Em todos os passos: multiplayer não comprova competitividade, ausência no resumo
+não comprova ausência da mecânica, e informação de memória não deve ser atribuída
+à IGDB. Se não houver confirmação suficiente, perguntar não autoriza relaxar requisitos.
+
+Caso adicional de flexibilização: diga "Pode sugerir algo próximo, mesmo sem
+competição". Agora uma aproximação pode ser proposta, mantendo explícito o que
+foi flexibilizado e respeitando as outras preferências. Esse caso impede que o
+ajuste torne o agente excessivamente rígido.
+
+#### Onde editar cada tipo de exemplo
+
+| O que você quer mudar | Arquivo e ponto de edição |
+| --- | --- |
+| Perguntas, critérios de aprovação e conversas reais | Este guia: caso acima e tabela abaixo |
+| Comportamento do agente | `backend/app/agents/game_agent.py`: variável `INSTRUCTIONS` |
+| Regras que precisam chegar ao modelo | `backend/tests/test_ai.py`: lista `rule` em `test_sdk_receives_recommendation_rules` |
+| Jogos e metadados simulados da ferramenta | `backend/tests/test_catalog_agent.py`: função `result()` e constantes `URL`/`SOURCE` |
+| Argumentos e respostas simuladas do SDK | Mesmo arquivo: `test_sdk_completes_tool_cycle_with_filters_without_network` |
+| Resposta bruta da IGDB e normalização | `backend/tests/test_catalog.py`: constante `GAME` |
+| Taxonomias e filtros simulados | `backend/tests/test_catalog_filters.py`: constante `TAXONOMIES` |
+| Exemplos de requisição e validação REST | `backend/tests/test_chat.py`: fixture `payload` |
+
+Para um ajuste pontual, altere um caso por vez e mantenha o restante como controle.
+Nos testes, `@pytest.mark.parametrize` permite acrescentar entradas à mesma regra.
+Use dados fictícios, nunca chaves reais. Se alterar uma URL simulada, mantenha as
+asserções coerentes com ela; isso não confirma a existência da URL na internet.
+
+Exemplo: para trocar o resumo entregue pela ferramenta ao modelo nos testes,
+altere `summary` em `result()`. Para testar uma preferência diferente no ciclo do
+SDK, altere tanto a mensagem `ChatRequest` quanto os argumentos do `function_call`
+e as asserções correspondentes. Nesse teste a chamada é programada pelo mock:
+ele NÃO comprova que o modelo real escolheria aqueles argumentos.
+
+O teste `test_sdk_receives_recommendation_rules` confere se as instruções foram
+enviadas e detecta sua remoção acidental. Suas asserções textuais precisam acompanhar
+reformulações intencionais do prompt. Ele não garante que o modelo obedecerá, que
+os jogos atendem às preferências ou que a resposta sairá sem Markdown. Essas
+propriedades ainda devem ser avaliadas manualmente; não adicionamos chamadas pagas
+à suíte por padrão.
+
+Para executar somente os testes relacionados, na pasta `backend/`:
+
+```bash
+uv run --locked pytest tests/test_ai.py tests/test_catalog_agent.py tests/test_catalog_filters.py -q -W error
+uv run --locked pytest tests/test_ai.py -k recommendation_rules -q -W error
+```
+
+#### Outros cenários para adaptar
+
 | Caso | Pedido sugerido | O que verificar |
 | --- | --- | --- |
 | Ambiguidade | "Quero um jogo de construção" | Pergunta curta para entender plataforma e tipo de construção; não escolhe Fortnite automaticamente |

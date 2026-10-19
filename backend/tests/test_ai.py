@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from openai import AsyncOpenAI
 
 from app.api.schemas import ChatRequest
+from app.agents.game_agent import INSTRUCTIONS
 from app.core.config import get_ai_settings
 from app.core.errors import AIConfigurationError
 from app.main import app
@@ -95,8 +96,24 @@ def test_sdk_sends_history_once_and_disables_storage_and_traces(monkeypatch):
     assert sent[0]["store"] is False
     assert sent[0]["max_output_tokens"] == 800
     assert "Chat Jogos" in sent[0]["instructions"]
+    assert sent[0]["instructions"] == INSTRUCTIONS
     assert configs[0].tracing_disabled is True
     assert clients[0].is_closed()
+
+
+@pytest.mark.parametrize("rule", [
+    "Multiplayer não comprova competição",
+    "Não apresente 'o mais próximo' ignorando um requisito essencial",
+    "Só ofereça aproximações se o usuário aceitar flexibilizar o requisito",
+    "Não transfira características, plataformas, modos ou links entre jogos",
+    "Não use Markdown",
+])
+def test_sdk_receives_recommendation_rules(monkeypatch, rule):
+    """Confere configuração enviada; não avalia obediência de um modelo real."""
+    sent, _ = install_transport(monkeypatch, text="Você quer competir de que forma?")
+    asyncio.run(chat_service.generate_reply(request()))
+    # Normalizar apenas espaços para permitir reformatar as linhas do prompt.
+    assert rule in " ".join(sent[0]["instructions"].split())
 
 
 @pytest.mark.parametrize("status", [401, 403, 404, 429, 500])
