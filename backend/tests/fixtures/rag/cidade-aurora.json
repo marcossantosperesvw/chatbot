@@ -1,0 +1,11 @@
+{
+  "document_id": "cidade-aurora-teste",
+  "title": "Guia fictício para testes de ingestão",
+  "game": "Cidade Aurora — jogo fictício",
+  "platforms": ["Plataforma fictícia"],
+  "game_version": "versão fictícia de teste",
+  "source": "Documento sintético criado para testes do projeto; não é uma fonte sobre jogos reais.",
+  "source_url": null,
+  "reviewed_at": "2026-10-19",
+  "synthetic": true
+}
