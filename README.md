@@ -23,19 +23,23 @@ ficam centralizadas no `.gitignore` da raiz.
 
 ## Desenvolvimento local
 
-Crie os arquivos locais de configuração a partir dos exemplos:
+Crie os arquivos locais de configuração a partir dos exemplos, sem sobrescrever existentes:
 
 ```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env.local
+cp -n backend/.env.example backend/.env
+cp -n frontend/.env.example frontend/.env.local
 ```
+
+Preencha `OPENAI_API_KEY` e `OPENAI_MODEL` em `backend/.env`. O passo a passo está
+em [Configuração da OpenAI](backend/README.md#configurar-a-openai--passo-a-passo).
+Chaves ficam somente no backend. Testes automatizados não consomem a API.
 
 Instale e execute o backend:
 
 ```bash
 cd backend
-uv sync
-uv run uvicorn app.main:app --reload
+uv sync --locked
+uv run --locked uvicorn app.main:app --reload
 ```
 
 Em outro terminal, instale e execute o frontend:
@@ -69,12 +73,19 @@ Antes de enviar alterações, execute:
 ```bash
 cd frontend
 npm run lint
+npm test
 npm run build
 
 cd ../backend
 uv run python -m compileall app scripts
+uv run --locked pytest -q -W error
 ```
 
 Arquivos de ambiente e credenciais devem permanecer locais. Quando o projeto
 precisar documentar variáveis, use arquivos `.env.example` sem valores
 secretos.
+
+## Arquitetura e evolução
+
+Consulte [Arquitetura](docs/architecture.md) para responsabilidades, limites do
+MVP e planejamento de RAG, catálogo de jogos e infraestrutura AWS futura.
