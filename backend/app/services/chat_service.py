@@ -7,14 +7,17 @@ from openai import APITimeoutError, AsyncOpenAI, OpenAIError
 
 from app.agents.game_agent import create_game_agent
 from app.api.schemas import ChatRequest
+from app.catalog.igdb_client import IGDBClient
 from app.core.config import get_ai_settings
 from app.core.errors import AIProviderError, AITimeoutError
+from app.tools.catalog import CatalogContext, validate_reply_urls
 
 
-async def generate_reply(request: ChatRequest) -> str:
+async def generate_reply(request: ChatRequest, *, catalog: IGDBClient | None = None) -> str:
     settings = get_ai_settings()
     messages = [item.model_dump() for item in request.history]
     messages.append({"role": "user", "content": request.message})
+    context = CatalogContext(catalog=catalog)
 
     try:
         async with asyncio.timeout(settings.timeout_seconds):
@@ -27,7 +30,8 @@ async def generate_reply(request: ChatRequest) -> str:
                 result = await Runner.run(
                     create_game_agent(settings, client),
                     input=messages,
-                    max_turns=1,
+                    context=context,
+                    max_turns=3,  # Até duas rodadas de ferramenta e uma resposta final.
                     run_config=RunConfig(tracing_disabled=True),
                 )
     except (TimeoutError, APITimeoutError):
@@ -39,4 +43,5 @@ async def generate_reply(request: ChatRequest) -> str:
     if not isinstance(content, str) or not 1 <= len(content.strip()) <= 4000:
         # Não cortar silenciosamente nem invalidar o histórico do próximo turno.
         raise AIProviderError()
+    validate_reply_urls(content, context)
     return content.strip()

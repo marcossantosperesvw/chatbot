@@ -11,7 +11,8 @@ from app.main import app
 
 @pytest.fixture
 def client(monkeypatch):
-    async def reply(request):
+    async def reply(request, *, catalog):
+        assert catalog is app.state.catalog
         return f"Resposta de teste: «{request.message[:100]}»"
 
     monkeypatch.setattr(chat_api, "generate_reply", reply)
@@ -133,7 +134,7 @@ def test_rejects_malformed_json(client):
 
 
 def test_returns_generic_error_when_service_fails(client, payload, monkeypatch):
-    async def failing_reply(request):
+    async def failing_reply(request, *, catalog):
         raise RuntimeError("Detalhe interno que não deve aparecer na resposta.")
 
     monkeypatch.setattr(chat_api, "generate_reply", failing_reply)
