@@ -125,9 +125,6 @@ export function Chat() {
 
         {chat.messages.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-5 py-10 text-center">
-            <p className="mb-4 text-xs font-semibold tracking-[0.2em] text-indigo-300">
-              APERTE START
-            </p>
             <h2 className="max-w-lg text-2xl font-semibold leading-tight tracking-tight text-white sm:text-3xl">
               Qual será a próxima aventura?
             </h2>
