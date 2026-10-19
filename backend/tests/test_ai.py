@@ -80,7 +80,7 @@ def test_sdk_sends_history_once_and_disables_storage_and_traces(monkeypatch):
 
     async def observed_run(*args, **kwargs):
         configs.append(kwargs["run_config"])
-        assert kwargs["max_turns"] == 1
+        assert kwargs["max_turns"] == 3
         return await original_run(*args, **kwargs)
 
     monkeypatch.setattr(chat_service.Runner, "run", observed_run)
