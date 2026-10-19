@@ -6,6 +6,11 @@ Monorepo com frontend Next.js/TypeScript e backend Python/FastAPI. São dois
 componentes de uma aplicação, não uma arquitetura de microsserviços. Um único
 agente do OpenAI Agents SDK responde via Responses API, sem ferramentas externas.
 
+O backend também oferece `GET /api/games`, uma pesquisa por nome no catálogo IGDB
+com autenticação Twitch, cache em memória e metadados/links normalizados. Ela é
+independente do chat e ainda não foi conectada ao agente. Configuração e validação
+real estão descritas em [Catálogo IGDB](igdb-catalog.md).
+
 Fluxo: usuário → frontend → `POST /api/chat` → serviço → agente → OpenAI → serviço
 → resposta JSON → frontend → histórico da sessão da aba.
 
@@ -26,6 +31,7 @@ Fluxo: usuário → frontend → `POST /api/chat` → serviço → agente → Op
 | `backend/app/services/` | Orquestração da requisição sem estado compartilhado |
 | `backend/app/agents/` | Instruções e configuração do agente |
 | `backend/app/core/` | Configuração, erros e proteção dos logs |
+| `backend/app/catalog/` | Cliente IGDB, credenciais e normalização dos dados |
 | `backend/app/tools/` | Reservado para integrações futuras; ainda não utilizado |
 | `backend/app/rag/` e `knowledge/` | Reservados para recuperação futura; ainda não utilizados |
 | `backend/app/conversations/` | Reservado; nenhuma persistência de servidor implementada |
@@ -63,8 +69,9 @@ Cada implementação exige escopo e aprovação próprios.
    recuperação e respostas com indicação de fontes. Um catálogo estruturado de
    metadados não é automaticamente RAG. Uma base pequena melhora respostas sobre
    seu conteúdo, mas não deve limitar o chatbot exclusivamente àqueles jogos.
-2. **Catálogo externo:** escolher API, cobertura e termos de uso para consultar
-   jogos, plataformas e lojas. Distinguir dados consultados de conhecimento do modelo.
+2. **Catálogo externo:** IGDB escolhida; pesquisa independente implementada, com
+   validação real pendente de credenciais. Próximo passo: conectar ferramentas e
+   filtros ao agente. Distinguir dados consultados de conhecimento do modelo.
 3. **Lojas e vídeos:** usar URLs verificadas e embeds permitidos, sem inventar links.
 4. **Persistência permanente:** somente quando houver requisito de recuperar
    conversas entre sessões; decidir banco, autenticação, retenção e exclusão juntos.

@@ -60,6 +60,22 @@ uv run --locked uvicorn app.main:app --reload
 A API fica disponível em <http://localhost:8000>. Para verificar o serviço,
 acesse `GET /api/health`.
 
+## Catálogo de jogos — IGDB
+
+A pesquisa independente de IA está disponível em `GET /api/games?query=nome&limit=5`.
+Ela consulta a IGDB e devolve metadados normalizados, página de origem e links de
+lojas recebidos do catálogo, quando disponíveis. O agente do chat ainda não chama
+essa pesquisa. Ela não utiliza créditos da OpenAI.
+
+Configure `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET` no `.env` do backend, usando um
+aplicativo confidencial registrado na Twitch. `IGDB_TIMEOUT_SECONDS` é opcional
+(padrão 5; de 1 a 15 segundos). Não sobrescreva as configurações OpenAI existentes.
+Sem credenciais IGDB, somente a rota do catálogo fica indisponível.
+
+O [guia do catálogo](../docs/igdb-catalog.md) explica como criar as credenciais,
+testar pelo Swagger, interpretar os resultados e reconhecer os limites de cache,
+autenticação e links. Consulte esse guia antes de conectar a ferramenta ao agente.
+
 ## Contrato do chat
 
 `POST /api/chat` recebe JSON e executa um agente via Responses API. Ainda não há
@@ -206,6 +222,6 @@ tecnologias, conceitos e justificativa das decisões, aguardando aprovação.
 Depois da entrega, explique as alterações, o funcionamento, como executar e
 testar, e as melhorias futuras. Cada aprovação autoriza somente a etapa descrita.
 
-Melhorias seguintes, sujeitas à aprovação por etapa: recuperação RAG, catálogo
-externo, streaming e implantação. A evolução de infraestrutura está descrita em
+Melhorias seguintes, sujeitas à aprovação por etapa: ferramenta de consulta ao
+catálogo pelo agente, recuperação RAG, streaming e implantação. A evolução de infraestrutura está descrita em
 [Arquitetura](../docs/architecture.md).
