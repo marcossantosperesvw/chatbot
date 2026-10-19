@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from openai import AsyncOpenAI
 
 from app.api.schemas import ChatRequest
+from app.agents import game_agent
 from app.core.config import get_ai_settings
 from app.core.errors import AIConfigurationError
 from app.main import app
@@ -80,7 +81,7 @@ def test_sdk_sends_history_once_and_disables_storage_and_traces(monkeypatch):
 
     async def observed_run(*args, **kwargs):
         configs.append(kwargs["run_config"])
-        assert kwargs["max_turns"] == 1
+        assert kwargs["max_turns"] == 3
         return await original_run(*args, **kwargs)
 
     monkeypatch.setattr(chat_service.Runner, "run", observed_run)
@@ -95,8 +96,51 @@ def test_sdk_sends_history_once_and_disables_storage_and_traces(monkeypatch):
     assert sent[0]["store"] is False
     assert sent[0]["max_output_tokens"] == 800
     assert "Chat Jogos" in sent[0]["instructions"]
+    assert sent[0]["instructions"] == game_agent.load_instructions()
     assert configs[0].tracing_disabled is True
     assert clients[0].is_closed()
+
+
+@pytest.mark.parametrize("rule", [
+    "Multiplayer não comprova competição",
+    "Não apresente 'o mais próximo' ignorando um requisito essencial",
+    "Só ofereça aproximações se o usuário aceitar flexibilizar o requisito",
+    "Não transfira características, plataformas, modos ou links entre jogos",
+    "Não use Markdown",
+])
+def test_sdk_receives_recommendation_rules(monkeypatch, rule):
+    """Confere configuração enviada; não avalia obediência de um modelo real."""
+    sent, _ = install_transport(monkeypatch, text="Você quer competir de que forma?")
+    asyncio.run(chat_service.generate_reply(request()))
+    # Normalizar apenas espaços para permitir reformatar as linhas do prompt.
+    assert rule in " ".join(sent[0]["instructions"].split())
+
+
+def test_sdk_reads_saved_markdown_on_each_request(monkeypatch, tmp_path):
+    path = tmp_path / "instructions.md"
+    monkeypatch.setattr(game_agent, "INSTRUCTIONS_PATH", path)
+    sent, _ = install_transport(monkeypatch)
+    for text in ("# Perfil\nResponda de forma breve.", "# Perfil\nFaça uma pergunta por vez."):
+        path.write_text(text, encoding="utf-8")
+        asyncio.run(chat_service.generate_reply(request()))
+        assert sent[-1]["instructions"] == text
+    assert len(sent) == 2
+
+
+@pytest.mark.parametrize("content", [None, "", "  \n\t "])
+def test_invalid_instructions_return_503_without_provider_call(monkeypatch, tmp_path, content):
+    path = tmp_path / "instructions.md"
+    if content is not None:
+        path.write_text(content, encoding="utf-8")
+    monkeypatch.setattr(game_agent, "INSTRUCTIONS_PATH", path)
+    sent, clients = install_transport(monkeypatch)
+    with TestClient(app) as client:
+        assert client.get("/api/health").status_code == 200
+        response = client.post("/api/chat", json=request().model_dump(mode="json"))
+    assert response.status_code == 503
+    assert not sent
+    assert clients[0].is_closed()
+    assert str(path) not in response.text
 
 
 @pytest.mark.parametrize("status", [401, 403, 404, 429, 500])
