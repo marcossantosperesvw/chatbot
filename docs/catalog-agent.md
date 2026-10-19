@@ -6,7 +6,8 @@ Usar a IGDB para fundamentar recomendações em metadados e fornecer links de or
 e de lojas recebidos do catálogo. Mantemos um agente, uma ferramenta e o contrato
 textual de `POST /api/chat`: nenhuma mudança de frontend ou dependência adicional.
 
-O catálogo não é uma base RAG nem pesquisa na web. Não restringimos a aplicação a
+O catálogo não é a base documental RAG nem pesquisa na web. O RAG separado está
+descrito no [guia completo](rag-usage.md). Não restringimos a aplicação a
 uma lista manual de jogos. A cobertura depende dos registros e campos da IGDB.
 
 ## Fluxo e responsabilidades
@@ -85,10 +86,11 @@ limitação e combinar o próximo passo com o usuário, sem presumir confirmaç�
 
 ## Limites e falhas
 
-- Duas consultas de ferramenta por mensagem; três rodadas máximas do modelo.
+- Até duas consultas de catálogo por mensagem. O RAG permite mais duas consultas
+  documentais; com índice ativo há até cinco rodadas do modelo, e três sem ele.
   Cada rodada pode consumir tokens: `OPENAI_MAX_OUTPUT_TOKENS` vale por geração,
   não é um teto total de tokens ou de custo da mensagem. Se o modelo insistir em
-  ferramentas sem finalizar em três rodadas, a requisição falha com HTTP 502.
+  ferramentas sem finalizar no limite de rodadas, a requisição falha com HTTP 502.
 - Uma ferramenta pode gerar várias requisições IGDB (autenticação, resolução de
   até três filtros, jogos e eventual renovação). O limite de duas ferramentas não
   equivale a apenas duas requisições HTTP externas.
@@ -239,18 +241,14 @@ simulada comprova o encadeamento técnico; aprovação comportamental exige mode
 
 ## Git e próximos passos
 
-`feature/catalog-recommendations` depende de `feature/igdb-catalog` (3A, PR #5).
-Seu PR é inicialmente direcionado à feature-base para mostrar somente 3B/3C.
-Nenhum desses PRs deve ser integrado sem revisão e aprovação. Após integrar 3A,
-retargetar este PR para `develop` e verificar o diff e os testes novamente.
+As implementações de catálogo e esclarecimento já foram integradas em `develop`.
+O PR #8 substituiu o fluxo anterior de esclarecimento, e o PR #9 alinhou a
+documentação ao Markdown. Mudanças de comportamento devem ser feitas em
+`backend/app/agents/game_agent.md`, não reintroduzindo constantes antigas no Python.
 
-A etapa de esclarecimento mais detalhado permanece no PR #4, ainda não validado.
-Esta feature altera as instruções mínimas necessárias ao catálogo; ao integrar
-ambas, revisar a sobreposição em `game_agent.py`, sem sobrescrever uma pela outra.
-
-Próximas melhorias, sujeitas a nova aprovação: avaliar relevância e orçamento de
-contexto, ajustar taxonomias/atalhos, resposta estruturada com proveniência para
-cards de lojas, integração de vídeos e RAG com fontes licenciadas. Não adicionamos
+Próximas melhorias: avaliar relevância e orçamento de contexto, ajustar
+taxonomias/atalhos, resposta estruturada com proveniência para cards de lojas,
+integração de vídeos e fontes reais para o RAG local já implementado. Não adicionamos
 banco, AWS, múltiplos agentes ou busca web para viabilizar esta etapa.
 
 Referências: [ferramentas do Agents SDK](https://developers.openai.com/api/docs/guides/agents/define-agents),

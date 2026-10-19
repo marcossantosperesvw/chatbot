@@ -82,8 +82,9 @@ explica filtros, limites e o roteiro de avaliação das etapas 3B e 3C.
 
 ## Contrato do chat
 
-`POST /api/chat` recebe JSON e executa um agente via Responses API. Ainda não há
-consultas RAG nem busca na web. O agente pode consultar o catálogo externo IGDB
+`POST /api/chat` recebe JSON e executa um agente via Responses API. Não há busca
+na web. O RAG local é opcional e usa um índice construído explicitamente; veja o
+[guia completo de configuração e testes](../docs/rag-usage.md). O agente pode consultar o catálogo externo IGDB
 com argumentos tipados, dentro dos limites por requisição.
 
 ### Requisição
@@ -264,7 +265,8 @@ tecnologias, conceitos e justificativa das decisões, aguardando aprovação.
 Depois da entrega, explique as alterações, o funcionamento, como executar e
 testar, e as melhorias futuras. Cada aprovação autoriza somente a etapa descrita.
 
-Melhorias seguintes, sujeitas à aprovação por etapa: recuperação RAG, streaming
-e implantação. A ferramenta de catálogo já está integrada ao agente.
+Melhorias seguintes: corpus real e avaliação do RAG, fontes estruturadas na interface,
+streaming e implantação. Catálogo e recuperação documental já estão integrados ao agente,
+mas a base RAG ainda não tem documentos reais e começa desativada.
 A evolução de infraestrutura está descrita em
 [Arquitetura](../docs/architecture.md).

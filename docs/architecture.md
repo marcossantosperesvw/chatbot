@@ -4,7 +4,8 @@
 
 Monorepo com frontend Next.js/TypeScript e backend Python/FastAPI. São dois
 componentes de uma aplicação, não uma arquitetura de microsserviços. Um único
-agente do OpenAI Agents SDK responde via Responses API, com uma ferramenta IGDB.
+agente do OpenAI Agents SDK responde via Responses API, com ferramenta IGDB e
+ferramenta RAG local opcional. Não existem múltiplos agentes ou banco vetorial.
 
 O backend também oferece `GET /api/games`, uma pesquisa por nome no catálogo IGDB
 com autenticação Twitch, cache em memória e metadados/links normalizados. Ela é
@@ -38,7 +39,7 @@ Fluxo: usuário → frontend → `POST /api/chat` → serviço → agente → Op
 | `backend/app/core/` | Configuração, erros e proteção dos logs |
 | `backend/app/catalog/` | Cliente IGDB, credenciais e normalização dos dados |
 | `backend/app/tools/` | Ferramenta tipada IGDB, orçamento local e URLs permitidas |
-| `backend/app/rag/` e `knowledge/` | Reservados para recuperação futura; ainda não utilizados |
+| `backend/app/rag/` e `knowledge/` | Ingestão, índice JSON, busca lexical/semântica e documentos curados |
 | `backend/app/conversations/` | Reservado; nenhuma persistência de servidor implementada |
 | `backend/tests/` e `frontend/tests/` | Verificações sem serviços pagos |
 
@@ -60,12 +61,15 @@ O UUID organiza mensagens, mas não autentica usuários nem protege acesso.
   exigem consulta antes de recomendar títulos e pedem esclarecimento para pedidos
   vagos. Isso precisa de avaliação comportamental, não é garantia determinística.
   URLs HTTP(S) ausentes dos resultados da requisição são rejeitadas pelo backend.
-  Não há busca web, preços, vídeos nem RAG. Nenhuma compra é executada.
+  Não há busca web, preços ou vídeos. RAG opcional complementa o catálogo com
+  documentos, fontes e filtros de jogo/plataforma/versão. Nenhuma compra é executada.
 - Limites atuais: mensagem de 4.000 caracteres, até 50 mensagens anteriores,
   saída de 4.000 caracteres, geração padrão de 800 tokens e timeout de até 25s.
   Caracteres, tokens e custo são medidas diferentes. Não há teto financeiro por usuário.
-- Até duas chamadas de catálogo, cinco jogos por chamada e três rodadas do modelo
-  por mensagem. O timeout total inclui ferramentas e esperas. A descoberta filtra
+- Até duas chamadas de catálogo, cinco jogos por chamada, duas consultas RAG e
+  até três trechos por consulta. São cinco rodadas do modelo com índice RAG ativo
+  e três sem ele. A memória de fontes e permissões é criada por requisição.
+  O timeout total inclui ferramentas e esperas. A descoberta de catálogo filtra
   plataforma/gênero/modo com AND e prioriza volume de avaliações; não é uma busca
   semântica nem garante as melhores recomendações possíveis. Limites e cache do
   cliente são locais por processo, não uma proteção distribuída contra abuso.
@@ -74,12 +78,14 @@ O UUID organiza mensagens, mas não autentica usuários nem protege acesso.
 - Cliente assíncrono por requisição: ciclo de vida explícito e sem estado global
   de conversa. Reutilização do cliente pode ser avaliada se houver necessidade medida.
 
-## Evolução aprovada apenas como planejamento
+## Evolução e avaliação
 
 Cada implementação exige escopo e aprovação próprios.
 
-1. **RAG:** selecionar fontes licenciadas e verificáveis; depois criar ingestão,
-   recuperação e respostas com indicação de fontes. Um catálogo estruturado de
+1. **RAG:** ingestão, índice JSON e recuperação lexical/semântica implementados,
+   com ferramenta do agente e indicação de fontes. Ainda selecionar fontes reais
+   e avaliar relevância/fidelidade. [Configuração e limites](rag-usage.md).
+   Um catálogo estruturado de
    metadados não é automaticamente RAG. Uma base pequena melhora respostas sobre
    seu conteúdo, mas não deve limitar o chatbot exclusivamente àqueles jogos.
 2. **Catálogo externo:** pesquisa independente e integração do agente com filtros

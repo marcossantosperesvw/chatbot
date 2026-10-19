@@ -1,7 +1,9 @@
 # Base documental do RAG
 
 Esta pasta é reservada para documentos reais selecionados e com permissão de uso.
-Ela ainda não contém uma base de conhecimento nem é consultada pelo chatbot.
+Ela ainda não contém documentos reais. O chatbot pode consultar um índice
+construído a partir dos documentos, se o RAG estiver habilitado; não lê esta pasta
+a cada mensagem. Este README é excluído da indexação.
 Não coloque as instruções do agente aqui: elas continuam em
 [`game_agent.md`](../backend/app/agents/game_agent.md).
 
@@ -58,11 +60,13 @@ não comprova precisão, atualidade ou autorização de uso: isso depende de rev
 4. Revise a correspondência entre o conteúdo e os metadados.
 5. Escolha um `document_id` único na base, mantenha o par Markdown/JSON e registre
    perguntas de avaliação. A ingestão atual de um único documento não verifica
-   duplicidade de IDs entre arquivos diferentes.
+   duplicidade de IDs; a construção da coleção agora rejeita IDs duplicados.
 
 Os exemplos de testes ficam exclusivamente em `backend/tests/fixtures/rag/`.
 Não mova esses exemplos para uma futura base de produção nem os apresente como
-fatos sobre jogos. `synthetic` identifica a natureza do conteúdo; ainda não existe
-um mecanismo de publicação, recuperação ou filtro de produção.
+fatos sobre jogos. `synthetic` identifica a natureza do conteúdo. A construção e
+o carregamento do índice bloqueiam exemplos fictícios por padrão; demonstrações
+exigem permissões explícitas no comando e na configuração do backend.
 
 Veja o [guia da primeira etapa do RAG](../docs/rag.md) para executar e inspecionar a ingestão.
+Para indexar, pesquisar e conectar ao chat, use o [guia completo](../docs/rag-usage.md).
