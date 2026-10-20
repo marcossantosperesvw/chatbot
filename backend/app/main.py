@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
@@ -12,6 +13,10 @@ from app.api.chat import router as chat_router
 from app.api.catalog import router as catalog_router
 from app.catalog.igdb_client import IGDBClient
 from app.core.logging import configure_agent_logging
+from app.rag.config import get_rag_settings
+from app.rag.errors import RagError
+from app.rag.index import load_index
+from app.rag.retrieval import KnowledgeStore
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 configure_agent_logging()
@@ -27,6 +32,16 @@ CORS_ORIGINS = [
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.knowledge = None
+    try:
+        settings = get_rag_settings()
+        if settings.enabled:
+            app.state.knowledge = KnowledgeStore(
+                load_index(settings.index_path, allow_synthetic=settings.allow_synthetic),
+                min_score=settings.min_score,
+            )
+    except RagError:
+        logging.getLogger(__name__).warning("RAG indisponível: confira configuração e índice local.")
     async with httpx.AsyncClient(follow_redirects=False) as http:
         app.state.catalog = IGDBClient(http)
         maintenance = asyncio.create_task(app.state.catalog.maintain_token())

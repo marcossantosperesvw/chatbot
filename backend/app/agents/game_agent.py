@@ -8,6 +8,7 @@ from openai import AsyncOpenAI
 from app.core.config import AISettings
 from app.core.errors import AIConfigurationError
 from app.tools.catalog import CatalogContext, search_games
+from app.tools.knowledge import search_knowledge
 
 
 INSTRUCTIONS_PATH = Path(__file__).resolve().with_suffix(".md")
@@ -32,5 +33,5 @@ def create_game_agent(settings: AISettings, client: AsyncOpenAI) -> Agent[Catalo
         model_settings=ModelSettings(
             max_tokens=settings.max_output_tokens, store=False, parallel_tool_calls=False,
         ),
-        tools=[search_games],
+        tools=[search_games, search_knowledge],
     )

@@ -82,8 +82,9 @@ explica filtros, limites e o roteiro de avaliação das etapas 3B e 3C.
 
 ## Contrato do chat
 
-`POST /api/chat` recebe JSON e executa um agente via Responses API. Ainda não há
-consultas RAG nem busca na web. O agente pode consultar o catálogo externo IGDB
+`POST /api/chat` recebe JSON e executa um agente via Responses API. Não há busca
+na web. O RAG local é opcional e usa um índice construído explicitamente; veja o
+[guia completo de configuração e testes](../docs/rag-usage.md). O agente pode consultar o catálogo externo IGDB
 com argumentos tipados, dentro dos limites por requisição.
 
 ### Requisição
@@ -224,10 +225,31 @@ do cliente. O cliente `openai` está limitado à faixa 2.26: a versão 2.54 exig
 um campo de uso de tokens que o Agents SDK 0.13.6 não preenchia. Atualize essa
 combinação somente após repetir os testes; `uv.lock` fixa a combinação verificada.
 
-Os testes de catálogo e agente também verificam filtros combinados, tratamento
-de filtros desconhecidos, cache, limite por mensagem, URLs e o ciclo de chamada
-de ferramenta. Não avaliam automaticamente a qualidade editorial de um modelo
-real: siga o roteiro manual do guia antes de aprovar a integração.
+## Avaliar perguntas e recomendações do agente
+
+O agente investiga pedidos abertos com uma ou duas perguntas curtas, usando as
+respostas e o histórico para decidir o próximo passo. Quando já há contexto
+suficiente, consulta candidatos e recomenda somente quando houver evidência para
+os requisitos essenciais. Pedir sugestões imediatas não autoriza inventar
+preferências ou ignorar critérios. Aproximações exigem que o usuário aceite
+flexibilizá-los. Plataforma, estilo, orçamento, dificuldade e modo de jogo não
+formam um questionário obrigatório.
+
+As regras e exemplos ficam em [`app/agents/game_agent.md`](app/agents/game_agent.md).
+O módulo `app/agents/game_agent.py` lê esse arquivo em UTF-8 a cada criação do
+agente e passa o texto para `Agent(instructions=...)`. Salvar o Markdown é suficiente
+para a próxima requisição; não é necessário reiniciar ao editar somente esse arquivo.
+Uma requisição em andamento continua com as instruções já carregadas. Ajustar o
+texto muda o comportamento solicitado ao modelo, sem treinar um modelo novo ou
+adicionar dados externos. A redação das respostas e a obediência podem variar.
+O arquivo deve acompanhar o backend no deploy; se ausente, vazio ou ilegível, o
+chat retorna HTTP 503, sem fallback silencioso para regras antigas.
+
+Use o [roteiro de avaliação colaborativa](../docs/agent-evaluation.md) para testar
+pedidos ambíguos, investigação gradual, contexto suficiente, correções e conversas
+independentes. Ele também explica como registrar suas observações para decidirmos
+os próximos ajustes juntos. Os testes automatizados continuam sem custo de API;
+avaliar respostas reais na interface usa os créditos da OpenAI.
 
 ## Fluxo de desenvolvimento
 
@@ -243,6 +265,8 @@ tecnologias, conceitos e justificativa das decisões, aguardando aprovação.
 Depois da entrega, explique as alterações, o funcionamento, como executar e
 testar, e as melhorias futuras. Cada aprovação autoriza somente a etapa descrita.
 
-Melhorias seguintes, sujeitas à aprovação por etapa: ferramenta de consulta ao
-catálogo pelo agente, recuperação RAG, streaming e implantação. A evolução de infraestrutura está descrita em
+Melhorias seguintes: corpus real e avaliação do RAG, fontes estruturadas na interface,
+streaming e implantação. Catálogo e recuperação documental já estão integrados ao agente,
+mas a base RAG ainda não tem documentos reais e começa desativada.
+A evolução de infraestrutura está descrita em
 [Arquitetura](../docs/architecture.md).
