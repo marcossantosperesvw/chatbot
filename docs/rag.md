@@ -1,15 +1,19 @@
 # RAG local — etapa 1: ingestão de documentos
 
+Este guia descreve o componente de ingestão. O fluxo completo agora está no
+[guia de indexação, busca e uso do agente](rag-usage.md).
+
 ## Escopo implementado
 
 Leitura de um par Markdown/JSON, validação de metadados e divisão em trechos
 rastreáveis. Usa a biblioteca padrão Python e Pydantic já instalados.
 
-Esta etapa NÃO implementa busca, embeddings, índice persistente, banco vetorial,
+Este componente NÃO implementa busca, embeddings, índice persistente, banco vetorial,
 upload pela interface ou integração com o agente. Não faz requisições externas,
 não usa créditos e não modifica o fluxo de chat ou as ferramentas IGDB existentes.
 
-É preparação para o RAG, não um RAG completo. Não há documentos reais selecionados:
+É preparação para o RAG, não todo o mecanismo. Os módulos adicionais de índice,
+recuperação e integração estão descritos no guia completo. Não há documentos reais selecionados:
 o jogo e os procedimentos dos exemplos são fictícios e isolados nos testes.
 
 ## Arquivos e responsabilidades
@@ -114,7 +118,7 @@ uv run --locked pytest -q -W error
 São testados arquivos ausentes, JSON inválido, campos obrigatórios/extras,
 metadados inválidos, UTF-8, textos vazios, limites, parágrafos, hierarquia e cercas
 de código. Esses testes não comprovam relevância de busca ou qualidade de resposta:
-ainda não há recuperação nem geração a avaliar.
+os testes de recuperação e integração estão em `test_rag_retrieval.py` e `test_rag_agent.py`.
 
 ## Erros e segurança
 
@@ -131,14 +135,15 @@ Ingerir um documento não comprova a veracidade de suas afirmações. No RAG fut
 trechos serão tratados como dados externos, nunca como instruções. Não utilizar
 marcação de origem ou de exemplo como substituto de revisão humana.
 
-## Próximas decisões — consultar o estudante antes de implementar
+## Evolução após a ingestão
 
 1. Selecionar fontes reais e perguntas de avaliação; exemplos fictícios não
    comprovam utilidade para o usuário final.
-2. Escolher a primeira estratégia de busca e comparar resultados de recuperação.
-3. Definir embeddings, orçamento, armazenamento e atualização do índice.
-4. Avaliar tamanho dos trechos, overlap e metadados usados como filtros.
-5. Integrar a ferramenta ao agente, com limites, citações e compatibilidade com
-   a validação de URLs existente, sem misturar registros/versões de jogos.
+2. Comparar a busca lexical e a opção semântica já implementadas no índice JSON.
+3. Escolher explicitamente modelo de embeddings e orçamento antes de chamadas reais.
+4. Avaliar tamanho dos trechos, overlap e filtros com as perguntas de avaliação.
+5. Avaliar a integração existente com limites, citações e validação de URLs,
+   sem misturar registros/versões de jogos.
 
-Nenhuma dessas decisões está implementada ou implicitamente aprovada nesta etapa.
+A implementação posterior foi autorizada pelo estudante. Fontes reais, envio de
+material e avaliação paga não foram realizados automaticamente.

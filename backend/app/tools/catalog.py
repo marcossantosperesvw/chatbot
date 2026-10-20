@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from agents import RunContextWrapper, function_tool
 from pydantic import ValidationError
+from openai import AsyncOpenAI
 
 from app.catalog.errors import (
     CatalogConfigurationError, CatalogFilterError, CatalogProviderError,
@@ -14,6 +15,7 @@ from app.catalog.errors import (
 from app.catalog.igdb_client import IGDBClient
 from app.catalog.schemas import CatalogDiscoveryQuery
 from app.core.errors import AIProviderError
+from app.rag.retrieval import KnowledgeStore
 
 
 MAX_CATALOG_CALLS = 2
@@ -26,6 +28,10 @@ class CatalogContext:
     catalog: IGDBClient | None
     calls: int = 0
     allowed_urls: set[str] = field(default_factory=set)
+    knowledge: KnowledgeStore | None = None
+    knowledge_calls: int = 0
+    allowed_citations: set[str] = field(default_factory=set)
+    embedding_client: AsyncOpenAI | None = None
 
 
 def tool_failure(context, error: Exception) -> str:
