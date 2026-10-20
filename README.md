@@ -33,6 +33,8 @@ cp -n frontend/.env.example frontend/.env.local
 Preencha `OPENAI_API_KEY` e `OPENAI_MODEL` em `backend/.env`. O passo a passo está
 em [Configuração da OpenAI](backend/README.md#configurar-a-openai--passo-a-passo).
 Chaves ficam somente no backend. Testes automatizados não consomem a API.
+Para tutoriais opcionais com reprodução no chat, configure também a
+[YouTube Data API v3](docs/youtube-tutorials.md).
 
 Instale e execute o backend:
 

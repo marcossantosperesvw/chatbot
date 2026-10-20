@@ -6,23 +6,27 @@ from agents import AgentsException, RunConfig, Runner
 from openai import APITimeoutError, AsyncOpenAI, OpenAIError
 
 from app.agents.game_agent import create_game_agent
-from app.api.schemas import ChatRequest
+from app.api.schemas import AssistantMessage, ChatRequest
 from app.catalog.igdb_client import IGDBClient
 from app.core.config import get_ai_settings
 from app.core.errors import AIProviderError, AITimeoutError
 from app.rag.retrieval import KnowledgeStore
 from app.tools.catalog import CatalogContext, validate_reply_urls
 from app.tools.knowledge import validate_reply_citations
+from app.tools.videos import extract_video
+from app.videos.youtube import YouTubeClient
 
 
 async def generate_reply(
     request: ChatRequest, *, catalog: IGDBClient | None = None,
     knowledge: KnowledgeStore | None = None,
-) -> str:
+    videos: YouTubeClient | None = None,
+) -> AssistantMessage:
     settings = get_ai_settings()
     messages = [item.model_dump() for item in request.history]
     messages.append({"role": "user", "content": request.message})
-    context = CatalogContext(catalog=catalog, knowledge=knowledge)
+    context = CatalogContext(catalog=catalog, knowledge=knowledge, videos=videos,
+                             video_consent=request.include_videos)
 
     try:
         async with asyncio.timeout(settings.timeout_seconds):
@@ -34,10 +38,10 @@ async def generate_reply(
             ) as client:
                 context.embedding_client = client
                 result = await Runner.run(
-                    create_game_agent(settings, client),
+                    create_game_agent(settings, client, enable_videos=request.include_videos),
                     input=messages,
                     context=context,
-                    max_turns=5 if knowledge else 3,
+                    max_turns=(5 if knowledge else 3) + (1 if request.include_videos and videos else 0),
                     run_config=RunConfig(tracing_disabled=True),
                 )
     except (TimeoutError, APITimeoutError):
@@ -51,4 +55,5 @@ async def generate_reply(
         raise AIProviderError()
     validate_reply_urls(content, context)
     validate_reply_citations(content, context)
-    return content.strip()
+    content, attachments = extract_video(content, context)
+    return AssistantMessage(content=content, videos=attachments)
