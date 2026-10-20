@@ -13,6 +13,7 @@ dependencies = [
     # Faixa compatível com os tipos de uso de tokens do Agents SDK 0.13.
     "openai>=2.26.0,<2.27",
     "fastapi>=0.143.0",
+    "httpx>=0.28.1,<1",
     "pydantic>=2.14.0,<3",
     "python-dotenv>=1.2.4",
     "uvicorn[standard]>=0.54.0",
