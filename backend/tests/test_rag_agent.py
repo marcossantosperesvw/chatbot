@@ -82,7 +82,7 @@ def test_tool_quota_even_when_requested_concurrently():
 def test_disabled_and_invalid_query_are_safe():
     assert asyncio.run(invoke(CatalogContext(None)))["status"] == "unavailable"
     assert asyncio.run(invoke(CatalogContext(None), query=""))["status"] == "invalid_query"
-    assert set(search_knowledge.params_json_schema["properties"]) == {"query", "game", "platform", "game_version"}
+    assert set(search_knowledge.params_json_schema["properties"]) == {"query", "game", "platform", "game_version", "product"}
 
 
 def test_failure_does_not_expose_documents_or_provider_details():
@@ -100,7 +100,7 @@ def test_unknown_or_historical_citation_is_rejected(marker):
         validate_reply_citations(marker, CatalogContext(None))
 
 
-def install_sdk_transport(monkeypatch, *, invented=False):
+def install_sdk_transport(monkeypatch, *, invented=False, arguments=None, reply=None):
     monkeypatch.setenv("OPENAI_API_KEY", "fake-key")
     monkeypatch.setenv("OPENAI_MODEL", "fake-model")
     monkeypatch.setenv("OPENAI_TIMEOUT_SECONDS", "25")
@@ -119,12 +119,14 @@ def install_sdk_transport(monkeypatch, *, invented=False):
         sent.append(body)
         if len(sent) == 1:
             output = [{"type": "function_call", "id": "fc_rag", "call_id": "call_rag", "name": "search_knowledge",
-                       "arguments": json.dumps({"query": "bairros ruas", "game": GAME, "platform": None, "game_version": None}),
+                       "arguments": json.dumps(arguments if arguments is not None else {
+                           "query": "bairros ruas", "game": GAME, "platform": None,
+                           "game_version": None, "product": None}),
                        "status": "completed"}]
         else:
             marker = "[RAG:invented:1]" if invented else CITATION
             output = [{"id": "msg_rag", "type": "message", "role": "assistant", "status": "completed",
-                       "content": [{"type": "output_text", "text": f"Demonstração fictícia: conecte ruas aos bairros. {marker} Fonte: {URL}", "annotations": []}]}]
+                       "content": [{"type": "output_text", "text": reply or f"Demonstração fictícia: conecte ruas aos bairros. {marker} Fonte: {URL}", "annotations": []}]}]
         return httpx.Response(200, json={
             "id": f"resp_{len(sent)}", "object": "response", "created_at": 1, "model": "fake-model",
             "status": "completed", "error": None, "incomplete_details": None, "instructions": None,
@@ -178,6 +180,29 @@ def test_fabricated_citation_is_rejected_in_final_reply(monkeypatch):
     with pytest.raises(AIProviderError):
         asyncio.run(chat_service.generate_reply(
             ChatRequest(conversation_id=uuid4(), message="bairros ruas"), knowledge=store()))
+
+
+def test_api_general_corpus_with_real_sdk_and_mocked_provider(monkeypatch, tmp_path):
+    index = build_index(Path(__file__).resolve().parents[2] / "knowledge")
+    path = tmp_path / "general.json"
+    save_index(index, path)
+    monkeypatch.setenv("RAG_ENABLED", "true")
+    monkeypatch.setenv("RAG_INDEX_PATH", str(path))
+    monkeypatch.setenv("RAG_ALLOW_SYNTHETIC", "false")
+    citation = "[RAG:dualsense-dispositivos:1]"
+    sent, embeddings = install_sdk_transport(monkeypatch,
+        arguments={"query":"DualSense resposta tátil PC USB", "game":None,
+                   "product":"DualSense", "platform":"PC", "game_version":None},
+        reply=f"O recurso depende de jogo compatível e USB no PC. {citation}")
+    with TestClient(app) as client:
+        response = client.post("/api/chat", json={"conversation_id":str(uuid4()),
+                                                  "message":"DualSense no PC precisa de USB para resposta tátil?"})
+    assert response.status_code == 200 and citation in response.json()["message"]["content"]
+    assert len(sent) == 2 and not embeddings
+    result = next(item for item in sent[1]["input"] if item.get("type") == "function_call_output")
+    passage = json.loads(result["output"])["passages"][0]
+    assert passage["scope"] == "general" and passage["game"] is None
+    assert passage["synthetic"] is False
 
 
 @pytest.mark.parametrize("configuration", ["missing", "synthetic-blocked", "invalid"])

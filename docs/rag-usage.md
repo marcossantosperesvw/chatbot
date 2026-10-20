@@ -23,8 +23,9 @@ LangChain, microsserviços ou filas. Para até 5.000 trechos, um snapshot em mem
 e busca linear é um ponto inicial simples; desempenho e relevância devem ser medidos
 antes de aumentar esse limite ou migrar para outra infraestrutura.
 
-**Ainda não temos corpus real.** O código pode ser testado integralmente com
-exemplos fictícios, mas isso não comprova qualidade de respostas sobre jogos reais.
+**Há um primeiro corpus real generalista em `knowledge/plataformas/`.** Veja o
+[guia do lote](knowledge-general.md) e seus testes de recuperação. Eles verificam
+evidências e filtros, mas não comprovam qualidade da redação do modelo.
 Por padrão `RAG_ENABLED=false`, e documentos sintéticos são bloqueados na construção
 e no carregamento. Nenhum arquivo foi enviado à OpenAI para testar esta entrega.
 
@@ -59,9 +60,10 @@ Para executar apenas o RAG:
 uv run --locked pytest tests/test_rag_ingestion.py tests/test_rag_retrieval.py tests/test_rag_agent.py -q -W error
 ```
 
-Esses testes usam documentos fictícios e transportes HTTP simulados, inclusive
+Os testes usam documentos fictícios, o corpus geral real e transportes HTTP simulados, inclusive
 para o SDK e embeddings. Não chamam serviços reais. Os dados e asserções editáveis
-de recuperação ficam em `tests/fixtures/rag/retrieval-cases.json`; eles verificam
+de recuperação ficam em `tests/fixtures/rag/retrieval-cases.json` e
+`tests/evaluation/knowledge-cases.json`; eles verificam
 o primeiro trecho esperado ou ausência de evidência. Não avaliam a redação do modelo.
 
 ## 2. Criar e consultar um índice lexical de demonstração
@@ -169,7 +171,11 @@ recusa sobrescrever um índice sem `--force` antes de gerar novos embeddings.
 
 ## Regras de recuperação e proteção
 
-- Nome do jogo é obrigatório para não misturar documentos arbitrariamente.
+- Sem nome de jogo (`game=null`), a busca consulta somente `scope=general`.
+  Com nome, consulta somente `scope=game`, por correspondência exata normalizada.
+  Documentos antigos sem `scope` continuam sendo tratados como `game`.
+- `product`/`--product` filtra serviço/produto explicitamente. Não há fallback
+  para outro produto quando o filtro não encontra documentos.
 - Plataforma e versão, quando informadas, exigem correspondência nos metadados.
   Valores desconhecidos não confirmam requisitos. Não há aliases automáticos
   de PS5/PlayStation 5 ou busca aproximada de nomes; padronize o corpus e os testes.

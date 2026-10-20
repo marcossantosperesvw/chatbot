@@ -1,0 +1,12 @@
+{
+  "document_id": "dualsense-dispositivos",
+  "title": "DualSense: limites de recursos no PC, Mac e celular",
+  "scope": "general",
+  "game": null,
+  "products": ["DualSense", "PlayStation"],
+  "platforms": ["PC", "macOS", "Android", "iOS"],
+  "source": "Sony/PlayStation, uso do DualSense em dispositivos compatíveis. Síntese autoral; revisão documental, sem teste físico.",
+  "source_url": "https://www.playstation.com/pt-br/support/hardware/pair-dualsense-controller-bluetooth/",
+  "reviewed_at": "2026-10-20",
+  "synthetic": false
+}

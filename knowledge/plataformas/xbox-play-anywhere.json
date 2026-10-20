@@ -1,0 +1,12 @@
+{
+  "document_id": "xbox-play-anywhere",
+  "title": "Xbox Play Anywhere: compra e progresso entre console e PC",
+  "scope": "general",
+  "game": null,
+  "products": ["Xbox"],
+  "platforms": ["PC", "Xbox"],
+  "source": "Xbox, FAQ Xbox Play Anywhere. Síntese autoral da documentação pública; revisão documental, sem compra ou teste de transferência.",
+  "source_url": "https://www.xbox.com/en-US/games/xbox-play-anywhere",
+  "reviewed_at": "2026-10-20",
+  "synthetic": false
+}

@@ -1,0 +1,12 @@
+{
+  "document_id": "ps5-retrocompatibilidade",
+  "title": "PS5: retrocompatibilidade, discos e controles de PS4",
+  "scope": "general",
+  "game": null,
+  "products": ["PlayStation"],
+  "platforms": ["PS4", "PS5"],
+  "source": "Sony/PlayStation, compatibilidade regressiva PS4/PS5. Síntese autoral; revisão documental, sem testar títulos ou periféricos.",
+  "source_url": "https://www.playstation.com/pt-br/support/games/ps5-backward-compatibility-games/",
+  "reviewed_at": "2026-10-20",
+  "synthetic": false
+}

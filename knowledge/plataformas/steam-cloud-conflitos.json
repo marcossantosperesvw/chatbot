@@ -1,0 +1,12 @@
+{
+  "document_id": "steam-cloud-conflitos",
+  "title": "Steam Cloud: saves, progresso e conflitos",
+  "scope": "general",
+  "game": null,
+  "products": ["Steam"],
+  "platforms": ["PC", "Steam Deck", "macOS"],
+  "source": "Valve, Steam Cloud. Síntese autoral em português da documentação pública; revisão documental, sem execução no cliente.",
+  "source_url": "https://help.steampowered.com/en/faqs/view/68D2-35AB-09A9-7678",
+  "reviewed_at": "2026-10-20",
+  "synthetic": false
+}
