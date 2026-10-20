@@ -52,6 +52,7 @@ venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.data/
 .coverage
 htmlcov/
 build/
@@ -61,4 +62,3 @@ wheels/
 
 # AWS SAM
 .aws-sam/
-

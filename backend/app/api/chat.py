@@ -29,7 +29,8 @@ router = APIRouter(prefix="/api", tags=["chat"])
 )
 async def chat(request: ChatRequest, http_request: Request) -> ChatResponse:
     try:
-        content = await generate_reply(request, catalog=http_request.app.state.catalog)
+        content = await generate_reply(request, catalog=http_request.app.state.catalog,
+                                       knowledge=http_request.app.state.knowledge)
         return ChatResponse(
             conversation_id=request.conversation_id,
             message=AssistantMessage(content=content),

@@ -161,7 +161,8 @@ Avalie cada resposta por intenção, sem exigir uma frase literal:
 - Mantém as limitações atuais: não afirma consultar a web e não inventa URLs,
   preços, fontes ou disponibilidade. Links de lojas podem ser enviados quando
   retornados pela ferramenta na requisição atual; não comprovam estoque ou preço.
-  Cards de lojas, vídeos e RAG serão tarefas posteriores.
+  Cards de lojas e vídeos serão tarefas posteriores. O RAG local opcional já está
+  implementado; sua configuração e avaliação estão no [guia específico](rag-usage.md).
 - Usa texto simples, sem asteriscos de negrito ou links Markdown na resposta.
 
 Marque `Atendeu`, `Parcial` ou `Não atendeu` e registre a evidência. Um sucesso

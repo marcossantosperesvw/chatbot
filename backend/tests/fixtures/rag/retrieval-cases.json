@@ -1,0 +1,26 @@
+[
+  {
+    "name": "encontra-construcao",
+    "query": "bairros ruas",
+    "game": "Cidade Aurora — jogo fictício",
+    "expected_chunk": "cidade-aurora-teste:2"
+  },
+  {
+    "name": "encontra-modo-individual",
+    "query": "mapa administrado pessoa",
+    "game": "Cidade Aurora — jogo fictício",
+    "expected_chunk": "cidade-aurora-teste:3"
+  },
+  {
+    "name": "assunto-ausente",
+    "query": "astronave viagem interplanetaria",
+    "game": "Cidade Aurora — jogo fictício",
+    "expected_chunk": null
+  },
+  {
+    "name": "nao-transfere-outro-jogo",
+    "query": "bairros ruas",
+    "game": "Outro jogo",
+    "expected_chunk": null
+  }
+]
