@@ -12,9 +12,11 @@ import httpx
 
 from app.catalog.config import IGDBSettings, get_igdb_settings
 from app.catalog.errors import (
-    CatalogProviderError, CatalogRateLimitError, CatalogTimeoutError,
+    CatalogFilterError, CatalogProviderError, CatalogRateLimitError, CatalogTimeoutError,
 )
-from app.catalog.schemas import CatalogGame, CatalogQuery, CatalogSearchResult, StoreLink
+from app.catalog.schemas import (
+    CatalogDiscoveryQuery, CatalogGame, CatalogQuery, CatalogSearchResult, StoreLink,
+)
 
 
 TOKEN_URL = "https://id.twitch.tv/oauth2/token"
@@ -27,6 +29,13 @@ FIELDS = (
 CACHE_TTL_SECONDS = 300
 CACHE_MAX_ENTRIES = 128
 REQUEST_INTERVAL_SECONDS = 0.26  # Abaixo de 4 requisições/s, por processo.
+FILTER_FIELDS = {"platform": "platforms", "genre": "genres", "game_mode": "game_modes"}
+# Conveniências de linguagem, não uma lista fechada de jogos ou IDs de terceiros.
+FILTER_ALIASES = {
+    "platform": {"pc": "PC (Microsoft Windows)", "ps5": "PlayStation 5", "ps4": "PlayStation 4"},
+    "genre": {"rpg": "Role-playing (RPG)"},
+    "game_mode": {"solo": "Single player", "cooperativo": "Co-operative"},
+}
 STORE_HOSTS = {
     "store.steampowered.com": "Steam",
     "gog.com": "GOG", "www.gog.com": "GOG",
@@ -103,7 +112,8 @@ class IGDBClient:
         self._next_request_at = 0.0
         self._cooldown_until = 0.0
         self._lock = asyncio.Lock()
-        self._cache: OrderedDict[tuple[str, int], tuple[float, CatalogSearchResult]] = OrderedDict()
+        self._cache: OrderedDict[tuple, tuple[float, CatalogSearchResult]] = OrderedDict()
+        self._filter_cache: OrderedDict[tuple[str, str], tuple[float, int]] = OrderedDict()
 
     def _check_response(self, response: httpx.Response) -> None:
         if response.status_code == 429:
@@ -171,11 +181,11 @@ class IGDBClient:
                             TypeError, CatalogProviderError, CatalogRateLimitError):
                         self._token = None
 
-    async def _games(self, query: str, token: str) -> httpx.Response:
+    async def _post(self, url: str, query: str, token: str) -> httpx.Response:
         await asyncio.sleep(max(0, self._next_request_at - time.monotonic()))
         self._next_request_at = time.monotonic() + REQUEST_INTERVAL_SECONDS
         return await self._http.post(
-            GAMES_URL, content=query.encode("utf-8"), timeout=self._settings.timeout_seconds,
+            url, content=query.encode("utf-8"), timeout=self._settings.timeout_seconds,
             headers={
                 "Client-ID": self._settings.client_id.get_secret_value(),
                 "Authorization": f"Bearer {token}",
@@ -183,10 +193,51 @@ class IGDBClient:
             },
         )
 
-    async def search(self, params: CatalogQuery) -> CatalogSearchResult:
+    async def _fetch(self, url: str, query: str) -> list:
+        token = await self._get_token()
+        response = await self._post(url, query, token)
+        if response.status_code == 401:
+            self._token = None
+            token = await self._get_token()
+            response = await self._post(url, query, token)
+            if response.status_code == 401:
+                self._token = None
+        self._check_response(response)
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise CatalogProviderError()
+        return payload
+
+    async def _resolve_filter(self, field: str, value: str) -> int:
+        value = FILTER_ALIASES.get(field, {}).get(value.casefold(), value)
+        key = (field, value.casefold())
+        cached = self._filter_cache.get(key)
+        if cached and time.monotonic() < cached[0]:
+            self._filter_cache.move_to_end(key)
+            return cached[1]
+        endpoint = FILTER_FIELDS[field]
+        literal = json.dumps(value, ensure_ascii=False)
+        payload = await self._fetch(
+            f"https://api.igdb.com/v4/{endpoint}",
+            f"fields id,name; where name ~ {literal}; limit 2;",
+        )
+        # Checar também localmente: não aceitar correspondências aproximadas.
+        if (len(payload) != 1 or payload[0]["name"].casefold() != value.casefold()):
+            raise CatalogFilterError(field)
+        identifier = payload[0]["id"]
+        if type(identifier) is not int or identifier <= 0:
+            raise CatalogProviderError()
+        self._filter_cache[key] = (time.monotonic() + CACHE_TTL_SECONDS, identifier)
+        self._filter_cache.move_to_end(key)
+        while len(self._filter_cache) > CACHE_MAX_ENTRIES:
+            self._filter_cache.popitem(last=False)
+        return identifier
+
+    async def search(self, params: CatalogQuery | CatalogDiscoveryQuery) -> CatalogSearchResult:
         if self._settings is None:
             self._settings = get_igdb_settings()
-        key = (params.query.casefold(), params.limit)
+        key = tuple((name, value.casefold() if isinstance(value, str) else value)
+                    for name, value in params.model_dump().items())
         try:
             async with asyncio.timeout(self._settings.timeout_seconds):
                 # Serialização simples evita renovar o token várias vezes e limita
@@ -196,26 +247,30 @@ class IGDBClient:
                     if cached and time.monotonic() < cached[0]:
                         self._cache.move_to_end(key)
                         return cached[1].model_copy(deep=True, update={
-                            "cached": True, "query": params.query,
+                            "cached": True, "query": params.query or "",
                         })
                     if time.monotonic() < self._cooldown_until:
                         raise CatalogRateLimitError(max(1, math.ceil(self._cooldown_until - time.monotonic())))
                     # O nome é um literal entre aspas, nunca uma consulta livre.
-                    query = f"search {json.dumps(params.query, ensure_ascii=False)}; fields {FIELDS}; limit {params.limit};"
-                    token = await self._get_token()
-                    response = await self._games(query, token)
-                    if response.status_code == 401:
-                        self._token = None
-                        token = await self._get_token()
-                        response = await self._games(query, token)
-                        if response.status_code == 401:
-                            self._token = None
-                    self._check_response(response)
-                    payload = response.json()
-                    if not isinstance(payload, list):
-                        raise CatalogProviderError()
+                    query = (f"search {json.dumps(params.query, ensure_ascii=False)}; "
+                             if params.query else "")
+                    query += f"fields {FIELDS}; limit {params.limit};"
+                    filters = []
+                    if isinstance(params, CatalogDiscoveryQuery):
+                        for field, endpoint in FILTER_FIELDS.items():
+                            value = getattr(params, field)
+                            if value:
+                                identifier = await self._resolve_filter(field, value)
+                                filters.append(f"{endpoint} = ({identifier})")
+                    if filters:
+                        query += " where " + " & ".join(filters) + ";"
+                    if not params.query:
+                        # Volume de avaliações prioriza candidatos conhecidos;
+                        # não equivale a relevância pessoal nem a uma nota de qualidade.
+                        query += " sort total_rating_count desc;"
+                    payload = await self._fetch(GAMES_URL, query)
                     result = CatalogSearchResult(
-                        query=params.query,
+                        query=params.query or "",
                         games=[normalize_game(item) for item in payload[:params.limit]],
                         retrieved_at=datetime.now(UTC),
                     )

@@ -64,22 +64,27 @@ acesse `GET /api/health`.
 
 A pesquisa independente de IA está disponível em `GET /api/games?query=nome&limit=5`.
 Ela consulta a IGDB e devolve metadados normalizados, página de origem e links de
-lojas recebidos do catálogo, quando disponíveis. O agente do chat ainda não chama
-essa pesquisa. Ela não utiliza créditos da OpenAI.
+lojas recebidos do catálogo, quando disponíveis. O agente do chat agora usa a mesma
+instância do cliente por meio da ferramenta `search_games`, sem chamar a própria API
+via HTTP. A pesquisa independente não utiliza créditos da OpenAI; o chat utiliza.
 
 Configure `IGDB_CLIENT_ID` e `IGDB_CLIENT_SECRET` no `.env` do backend, usando um
 aplicativo confidencial registrado na Twitch. `IGDB_TIMEOUT_SECONDS` é opcional
 (padrão 5; de 1 a 15 segundos). Não sobrescreva as configurações OpenAI existentes.
-Sem credenciais IGDB, somente a rota do catálogo fica indisponível.
+Sem credenciais IGDB, a rota do catálogo fica indisponível e a ferramenta do agente
+informa a falha. Perguntas gerais podem continuar, mas recomendações fundamentadas
+e links dependem da consulta.
 
 O [guia do catálogo](../docs/igdb-catalog.md) explica como criar as credenciais,
 testar pelo Swagger, interpretar os resultados e reconhecer os limites de cache,
-autenticação e links. Consulte esse guia antes de conectar a ferramenta ao agente.
+autenticação e links. O [guia do agente com catálogo](../docs/catalog-agent.md)
+explica filtros, limites e o roteiro de avaliação das etapas 3B e 3C.
 
 ## Contrato do chat
 
 `POST /api/chat` recebe JSON e executa um agente via Responses API. Ainda não há
-consultas RAG, busca na web ou catálogo externo.
+consultas RAG nem busca na web. O agente pode consultar o catálogo externo IGDB
+com argumentos tipados, dentro dos limites por requisição.
 
 ### Requisição
 
@@ -169,8 +174,16 @@ separado, não por uma suposta memória global do agente.
 - `services/chat_service.py`: monta histórico + mensagem atual uma única vez,
   aplica timeout e valida a saída. Abre e fecha um cliente assíncrono por requisição;
   é simples para o MVP, embora reaproveitar conexões possa ser útil depois.
-- `agents/game_agent.py`: define instruções, modelo e limite de geração. Um agente
-  basta nesta etapa; não há ferramentas, handoffs ou execução autônoma de ações.
+- `agents/game_agent.md`: instruções editáveis de comportamento, lidas em UTF-8
+  a cada requisição. Salve uma alteração e teste numa conversa nova; não é necessário
+  reiniciar ao editar apenas esse Markdown. Nunca coloque credenciais nele.
+- `agents/game_agent.py`: carrega e valida o Markdown, configura modelo e limite
+  de geração. Arquivo ausente, vazio ou ilegível causa HTTP 503, sem chamada ao modelo.
+  Um agente basta; há uma ferramenta de consulta, sem handoffs ou compras automáticas.
+- `tools/catalog.py`: adapta a consulta para o SDK, limita resultados/chamadas e
+  registra as URLs permitidas apenas durante a requisição atual.
+- `catalog/`: autentica na Twitch, resolve filtros por nome na IGDB, controla cache
+  e ritmo de requisições e normaliza os resultados. Não interpreta o perfil do usuário.
 - `core/config.py`: lê e valida configurações, protegendo a representação da chave.
 - `core/errors.py` e `core/logging.py`: falhas classificadas e logs do SDK sem
   mensagens brutas do provedor. Não habilite logs de depuração HTTP com dados reais.
@@ -179,7 +192,10 @@ O histórico da conversa selecionada é enviado à OpenAI a cada turno. Tracing 
 SDK está desativado e enviamos `store=False`. Isso **não significa retenção zero**
 nem elimina políticas de monitoramento do provedor; consulte os
 [controles de dados oficiais](https://developers.openai.com/api/docs/guides/your-data).
-Não envie informações sensíveis. `.env` é ignorado pelo Git; nunca use
+Quando a ferramenta é acionada, os argumentos extraídos (nome/filtros) também são
+enviados à IGDB; não enviamos a ela o histórico completo. Os metadados consultados
+são enviados à OpenAI para compor a resposta. Não envie informações sensíveis.
+`.env` é ignorado pelo Git; nunca use
 `NEXT_PUBLIC_OPENAI_API_KEY` nem coloque uma chave em arquivos de exemplo.
 
 Sem login e sem proteção contra abuso, esta versão é para desenvolvimento local.
@@ -207,6 +223,11 @@ sem rede ou cobrança, verificando contexto, isolamento, erros, logs e fechament
 do cliente. O cliente `openai` está limitado à faixa 2.26: a versão 2.54 exigia
 um campo de uso de tokens que o Agents SDK 0.13.6 não preenchia. Atualize essa
 combinação somente após repetir os testes; `uv.lock` fixa a combinação verificada.
+
+Os testes de catálogo e agente também verificam filtros combinados, tratamento
+de filtros desconhecidos, cache, limite por mensagem, URLs e o ciclo de chamada
+de ferramenta. Não avaliam automaticamente a qualidade editorial de um modelo
+real: siga o roteiro manual do guia antes de aprovar a integração.
 
 ## Fluxo de desenvolvimento
 

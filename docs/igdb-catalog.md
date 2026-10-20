@@ -148,7 +148,7 @@ Na pasta `backend/`, execute:
 ```bash
 uv run --locked pytest tests/test_catalog.py -q -W error
 uv run --locked pytest -q -W error
-```
+```Ap
 
 A suíte usa `httpx.MockTransport` para simular autenticação, validação, pesquisa
 e falhas, sem chamadas externas. O `httpx` já era instalado pelo cliente OpenAI;
