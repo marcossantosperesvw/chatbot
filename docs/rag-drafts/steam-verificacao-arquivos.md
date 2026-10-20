@@ -1,10 +1,10 @@
 # Steam: verificar arquivos de um jogo
 
-Status: rascunho geral, não indexado.
+Status: rascunho geral, não indexado; revisão humana pendente.
 
 Fonte: [Suporte oficial Steam — Verify Integrity of Game Files](https://help.steampowered.com/en/faqs/view/0C48-FCBD-DA71-93EB).
 
-Revisão: 2026-10-19. Resumo; procedimento não executado.
+Consulta documental: 2026-10-19. Resumo; procedimento não executado.
 
 ## Quando considerar
 
