@@ -10,8 +10,9 @@ import { ConversationSidebar } from "./conversation-sidebar";
 
 const SUGGESTIONS = [
   "Quero um jogo cooperativo",
-  "Gosto de RPG e exploração",
-  "Procuro um jogo para partidas rápidas",
+  "Como instalar a Epic Games no Windows?",
+  "Como funciona o Steam Cloud?",
+  "Como conectar meu controle ao PC?",
 ];
 
 export function Chat() {
@@ -60,7 +61,7 @@ export function Chat() {
               Chat Jogos
             </h1>
             <p className="text-xs text-slate-400">
-              Uma conversa sobre o seu próximo jogo
+              Descubra jogos, aprenda e tire suas dúvidas
             </p>
           </div>
         </div>
@@ -130,11 +131,15 @@ export function Chat() {
                 APERTE START
               </p>
               <h2 className="max-w-lg text-2xl font-semibold leading-tight tracking-tight text-white sm:text-3xl">
-                Qual será a próxima aventura?
+                O que vamos jogar ou aprender hoje?
               </h2>
               <p className="mt-4 max-w-md text-sm leading-6 text-slate-400">
-                Conte o que você gosta de jogar ou faça uma pergunta.
-                Suas preferências nesta conversa ajudam nas recomendações.
+                Descubra novos jogos, encontre tutoriais de instalação e tire
+                dúvidas sobre as plataformas em que você joga.
+              </p>
+              <p className="mt-2 max-w-md text-xs leading-5 text-slate-400">
+                Conte sua plataforma e o que precisa: suas preferências ajudam
+                a personalizar as recomendações e orientações.
               </p>
               <div className="mt-7 flex max-w-xl flex-wrap justify-center gap-2">
                 {SUGGESTIONS.map((suggestion) => (

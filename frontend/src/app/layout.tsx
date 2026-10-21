@@ -3,7 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Chat Jogos Online",
-  description: "Chatbot sobre jogos online",
+  description:
+    "Descubra novos jogos, encontre tutoriais de instalação e tire dúvidas sobre plataformas, controles e configurações com o Chat Jogos.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
