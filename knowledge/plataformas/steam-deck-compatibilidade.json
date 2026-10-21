@@ -1,0 +1,12 @@
+{
+  "document_id": "steam-deck-compatibilidade",
+  "title": "Steam Deck: categorias de compatibilidade e anticheat",
+  "scope": "general",
+  "game": null,
+  "products": ["Steam Deck", "Steam"],
+  "platforms": ["Steam Deck"],
+  "source": "Valve, Deck Verified. Síntese autoral da documentação pública; revisão dos critérios, não certificação de jogos.",
+  "source_url": "https://www.steamdeck.com/en/verified",
+  "reviewed_at": "2026-10-20",
+  "synthetic": false
+}

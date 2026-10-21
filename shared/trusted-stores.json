@@ -1,0 +1,10 @@
+{
+  "stores": [
+    {"name":"Steam","hosts":["store.steampowered.com"],"path":"^/app/[0-9]+(?:/[A-Za-z0-9_-]+)?/?$","query":{"l":"^[a-z_]{2,20}$"}},
+    {"name":"GOG","hosts":["gog.com","www.gog.com"],"path":"^/(?:[a-z]{2}(?:-[a-z]{2})?/)?game/[A-Za-z0-9_-]+/?$","query":{}},
+    {"name":"Epic Games","hosts":["store.epicgames.com"],"path":"^/(?:[a-z]{2}(?:-[A-Za-z]{2})?/)?p/[A-Za-z0-9_-]+/?$","query":{"lang":"^[a-z]{2}(?:-[A-Za-z]{2})?$"}},
+    {"name":"PlayStation","hosts":["store.playstation.com"],"path":"^/[a-z]{2}-[a-z]{2}/(?:product/[A-Za-z0-9_-]+|concept/[0-9]+)/?$","query":{}},
+    {"name":"Xbox","hosts":["www.xbox.com"],"path":"^/(?:[a-z]{2}-[A-Za-z]{2}/)?games/store/[A-Za-z0-9_-]+/[A-Za-z0-9]+/?$","query":{}},
+    {"name":"Nintendo","hosts":["www.nintendo.com"],"path":"^/[a-z]{2}(?:-[a-z]{2})?/store/products/[A-Za-z0-9_-]+/?$","query":{}}
+  ]
+}

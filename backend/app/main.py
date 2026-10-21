@@ -1,12 +1,26 @@
+import asyncio
+import logging
 import os
+from contextlib import asynccontextmanager, suppress
+from pathlib import Path
 
+import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.chat import router as chat_router
+from app.api.catalog import router as catalog_router
+from app.catalog.igdb_client import IGDBClient
+from app.core.logging import configure_agent_logging
+from app.rag.config import get_rag_settings
+from app.rag.errors import RagError
+from app.rag.index import load_index
+from app.rag.retrieval import KnowledgeStore
+from app.videos.youtube import YouTubeClient, VideoUnavailable, get_video_settings
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+configure_agent_logging()
 
 CORS_ORIGINS = [
     origin.strip()
@@ -17,7 +31,43 @@ CORS_ORIGINS = [
     if origin.strip()
 ]
 
-app = FastAPI(title="Chatbot API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.knowledge = None
+    try:
+        settings = get_rag_settings()
+        if settings.enabled:
+            app.state.knowledge = KnowledgeStore(
+                load_index(settings.index_path, allow_synthetic=settings.allow_synthetic),
+                min_score=settings.min_score,
+            )
+    except RagError:
+        logging.getLogger(__name__).warning("RAG indisponível: confira configuração e índice local.")
+    async with httpx.AsyncClient(follow_redirects=False) as http:
+        app.state.videos = None
+        video_maintenance = None
+        try:
+            video_settings = get_video_settings()
+            if video_settings:
+                app.state.videos = YouTubeClient(http, video_settings)
+                video_maintenance = asyncio.create_task(app.state.videos.maintain_cache())
+        except VideoUnavailable:
+            logging.getLogger(__name__).warning("YouTube indisponível: confira a configuração local.")
+        app.state.catalog = IGDBClient(http)
+        maintenance = asyncio.create_task(app.state.catalog.maintain_token())
+        try:
+            yield
+        finally:
+            if video_maintenance:
+                video_maintenance.cancel()
+                with suppress(asyncio.CancelledError):
+                    await video_maintenance
+            maintenance.cancel()
+            with suppress(asyncio.CancelledError):
+                await maintenance
+
+
+app = FastAPI(title="Chatbot API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +78,7 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
+app.include_router(catalog_router)
 
 
 @app.get("/api/health")

@@ -3,7 +3,10 @@
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StringConstraints
+
+from app.videos.schemas import TutorialVideo
+from app.catalog.schemas import StoreLink
 
 
 MessageContent = Annotated[
@@ -30,11 +33,14 @@ class ChatRequest(BaseModel):
     conversation_id: UUID
     message: MessageContent
     history: list[HistoryMessage] = Field(default_factory=list, max_length=50)
+    include_videos: StrictBool = False
 
 
 class AssistantMessage(BaseModel):
     role: Literal["assistant"] = "assistant"
-    content: str = Field(min_length=1)
+    content: MessageContent
+    videos: list[TutorialVideo] = Field(default_factory=list, max_length=1)
+    store_links: list[StoreLink] = Field(default_factory=list, max_length=20)
 
 
 class ChatResponse(BaseModel):

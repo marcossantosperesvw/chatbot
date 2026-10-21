@@ -6,11 +6,18 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api import chat as chat_api
+from app.api.schemas import AssistantMessage
 from app.main import app
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
+    async def reply(request, *, catalog, knowledge, videos):
+        assert catalog is app.state.catalog
+        assert knowledge is app.state.knowledge
+        return AssistantMessage(content=f"Resposta de teste: «{request.message[:100]}»")
+
+    monkeypatch.setattr(chat_api, "generate_reply", reply)
     with TestClient(app) as test_client:
         yield test_client
 
@@ -23,7 +30,7 @@ def payload():
     }
 
 
-def test_returns_simulated_reply_with_conversation_id(client, payload):
+def test_returns_reply_with_conversation_id(client, payload):
     response = client.post("/api/chat", json=payload)
 
     assert response.status_code == 200
@@ -31,7 +38,7 @@ def test_returns_simulated_reply_with_conversation_id(client, payload):
     assert set(body) == {"conversation_id", "message"}
     assert body["conversation_id"] == payload["conversation_id"]
     assert body["message"]["role"] == "assistant"
-    assert "Resposta simulada" in body["message"]["content"]
+    assert "Resposta de teste" in body["message"]["content"]
     assert payload["message"] in body["message"]["content"]
 
 
@@ -129,7 +136,7 @@ def test_rejects_malformed_json(client):
 
 
 def test_returns_generic_error_when_service_fails(client, payload, monkeypatch):
-    def failing_reply(message):
+    async def failing_reply(request, *, catalog, knowledge, videos):
         raise RuntimeError("Detalhe interno que não deve aparecer na resposta.")
 
     monkeypatch.setattr(chat_api, "generate_reply", failing_reply)
@@ -166,4 +173,4 @@ def test_openapi_exposes_the_chat_contract(client):
     operation = schema["paths"]["/api/chat"]["post"]
 
     assert operation["requestBody"]["required"] is True
-    assert {"200", "422", "500"} <= set(operation["responses"])
+    assert {"200", "422", "500", "502", "503", "504"} <= set(operation["responses"])

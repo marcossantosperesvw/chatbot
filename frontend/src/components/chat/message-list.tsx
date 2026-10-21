@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 
 import type { ChatMessage } from "@/types/chat";
+import { TutorialVideo } from "./tutorial-video";
+import { splitStoreLinks } from "@/lib/store-links";
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -45,8 +47,15 @@ export function MessageList({ messages, isSending }: MessageListProps) {
                     : "rounded-tl-sm border border-slate-700/70 bg-slate-800/80 text-slate-200"
                 }`}
               >
-                {message.content}
+                {isUser ? message.content : splitStoreLinks(message.content, message.store_links).map((part, index) =>
+                  part.href ? <a key={index} href={part.href} target="_blank" rel="noopener noreferrer"
+                    className="text-indigo-300 underline decoration-indigo-400/60 underline-offset-2 hover:text-indigo-200 focus-visible:outline-2 focus-visible:outline-indigo-300"
+                    title="Abrir página de produto em loja da lista permitida">{part.text}</a> : part.text,
+                )}
               </p>
+              {!isUser && message.videos?.slice(0, 1).map((video) => (
+                <TutorialVideo key={video.video_id} video={video} />
+              ))}
             </li>
           );
         })}

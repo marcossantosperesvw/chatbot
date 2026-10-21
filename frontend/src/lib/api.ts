@@ -1,4 +1,6 @@
 import type { ChatRequest, ChatResponse } from "@/types/chat";
+import { isVideoList } from "./videos.ts";
+import { isStoreLinkList } from "./store-links.ts";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
@@ -17,7 +19,9 @@ function isChatResponse(value: unknown): value is ChatResponse {
     message.role === "assistant" &&
     "content" in message &&
     typeof message.content === "string" &&
-    message.content.trim().length > 0
+    message.content.trim().length > 0 &&
+    isVideoList("videos" in message ? message.videos : undefined) &&
+    isStoreLinkList("store_links" in message ? message.store_links : undefined)
   );
 }
 
@@ -51,6 +55,12 @@ export async function sendChatMessage(
       throw new Error(
         "A mensagem ou o histórico não atende aos limites do chat. Revise o texto ou inicie uma nova conversa.",
       );
+    }
+    if (response.status === 503) {
+      throw new Error("A inteligência artificial está indisponível. Verifique a configuração do backend.");
+    }
+    if (response.status === 504) {
+      throw new Error("A inteligência artificial demorou para responder. Tente novamente.");
     }
     throw new Error("Não foi possível processar a mensagem. Tente novamente.");
   }
