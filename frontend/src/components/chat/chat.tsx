@@ -134,12 +134,7 @@ export function Chat() {
                 O que vamos jogar ou aprender hoje?
               </h2>
               <p className="mt-4 max-w-md text-sm leading-6 text-slate-400">
-                Descubra novos jogos, encontre tutoriais de instalação e tire
-                dúvidas sobre as plataformas em que você joga.
-              </p>
-              <p className="mt-2 max-w-md text-xs leading-5 text-slate-400">
-                Conte sua plataforma e o que precisa: suas preferências ajudam
-                a personalizar as recomendações e orientações.
+                Escolha uma sugestão ou mande sua pergunta.
               </p>
               <div className="mt-7 flex max-w-xl flex-wrap justify-center gap-2">
                 {SUGGESTIONS.map((suggestion) => (
