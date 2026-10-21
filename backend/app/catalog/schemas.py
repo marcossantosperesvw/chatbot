@@ -5,6 +5,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
+from app.catalog.trusted_stores import trusted_store
+
 
 SearchText = Annotated[str, StringConstraints(
     strip_whitespace=True, min_length=1, max_length=120,
@@ -20,8 +22,16 @@ class CatalogQuery(BaseModel):
 
 
 class StoreLink(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
     store: str
     url: str
+
+    @model_validator(mode="after")
+    def validate_trusted_destination(self):
+        if trusted_store(self.url) != self.store:
+            raise ValueError("Link de loja fora da política de destinos permitidos.")
+        return self
 
 
 class CatalogDiscoveryQuery(BaseModel):
