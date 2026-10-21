@@ -171,7 +171,7 @@ def test_sdk_completes_tool_cycle_with_filters_without_network(monkeypatch, tool
         assert len(calls) == 2
         return
     text = asyncio.run(chat_service.generate_reply(request, catalog=catalog))
-    assert URL in text
+    assert URL in text.content
     assert len(sent) == tool_rounds + 1
     assert len(calls) == tool_rounds
     assert calls[0].game_mode == "Single player"

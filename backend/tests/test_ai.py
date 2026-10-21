@@ -89,7 +89,8 @@ def test_sdk_sends_history_once_and_disables_storage_and_traces(monkeypatch):
                {"role": "assistant", "content": "Você joga com amigos?"}]
     result = asyncio.run(chat_service.generate_reply(request(history)))
 
-    assert result == "Recomendo um jogo cooperativo."
+    assert result.content == "Recomendo um jogo cooperativo."
+    assert result.videos == []
     assert len(sent) == 1
     assert sent[0]["model"] == "test-model"
     assert sent[0]["input"] == history + [{"role": "user", "content": "O que recomenda?"}]
@@ -223,4 +224,4 @@ def test_rejects_nontext_output(monkeypatch, output):
 def test_accepts_output_at_unicode_limit_without_truncating(monkeypatch):
     install_transport(monkeypatch, text="🎮" * 4000)
     result = asyncio.run(chat_service.generate_reply(request()))
-    assert result == "🎮" * 4000
+    assert result.content == "🎮" * 4000

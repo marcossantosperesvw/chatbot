@@ -265,6 +265,12 @@ tecnologias, conceitos e justificativa das decisões, aguardando aprovação.
 Depois da entrega, explique as alterações, o funcionamento, como executar e
 testar, e as melhorias futuras. Cada aprovação autoriza somente a etapa descrita.
 
+## Tutoriais do YouTube
+
+A integração opcional pesquisa vídeos e retorna um anexo validado por resposta.
+Configuração da chave, limites, contrato e testes estão no
+[guia de tutoriais](../docs/youtube-tutorials.md).
+
 Melhorias seguintes: avaliação das respostas reais com e sem RAG, fontes estruturadas
 na interface, streaming e implantação. Catálogo e recuperação documental já estão
 integrados ao agente. Há um [lote documental generalista](../docs/knowledge-general.md)

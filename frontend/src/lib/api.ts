@@ -1,4 +1,5 @@
 import type { ChatRequest, ChatResponse } from "@/types/chat";
+import { isVideoList } from "./videos.ts";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
@@ -17,7 +18,8 @@ function isChatResponse(value: unknown): value is ChatResponse {
     message.role === "assistant" &&
     "content" in message &&
     typeof message.content === "string" &&
-    message.content.trim().length > 0
+    message.content.trim().length > 0 &&
+    isVideoList("videos" in message ? message.videos : undefined)
   );
 }
 

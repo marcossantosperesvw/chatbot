@@ -4,7 +4,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request, status
 
-from app.api.schemas import AssistantMessage, ChatRequest, ChatResponse, ErrorResponse
+from app.api.schemas import ChatRequest, ChatResponse, ErrorResponse
 from app.core.errors import AIConfigurationError, AIProviderError, AITimeoutError
 from app.services.chat_service import generate_reply
 
@@ -29,11 +29,12 @@ router = APIRouter(prefix="/api", tags=["chat"])
 )
 async def chat(request: ChatRequest, http_request: Request) -> ChatResponse:
     try:
-        content = await generate_reply(request, catalog=http_request.app.state.catalog,
-                                       knowledge=http_request.app.state.knowledge)
+        message = await generate_reply(request, catalog=http_request.app.state.catalog,
+                                       knowledge=http_request.app.state.knowledge,
+                                       videos=http_request.app.state.videos)
         return ChatResponse(
             conversation_id=request.conversation_id,
-            message=AssistantMessage(content=content),
+            message=message,
         )
     except (AIConfigurationError, AIProviderError, AITimeoutError) as error:
         code, detail = {

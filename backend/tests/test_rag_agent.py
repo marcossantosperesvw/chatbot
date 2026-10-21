@@ -146,7 +146,7 @@ def test_real_sdk_retrieves_context_and_generates_cited_reply(monkeypatch, mode)
     sent, embeddings = install_sdk_transport(monkeypatch)
     request = ChatRequest(conversation_id=uuid4(), message="Como conectar ruas e bairros na Cidade Aurora?")
     reply = asyncio.run(chat_service.generate_reply(request, knowledge=store(mode)))
-    assert CITATION in reply and URL in reply
+    assert CITATION in reply.content and URL in reply.content
     assert len(sent) == 2
     tool_output = next(item for item in sent[1]["input"] if item.get("type") == "function_call_output")
     evidence = json.loads(tool_output["output"])

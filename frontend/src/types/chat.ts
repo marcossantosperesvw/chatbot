@@ -7,6 +7,14 @@ export interface HistoryMessage {
 
 export interface ChatMessage extends HistoryMessage {
   id: string;
+  videos?: TutorialVideo[];
+}
+
+export interface TutorialVideo {
+  video_id: string;
+  title: string;
+  channel: string;
+  retrieved_at: string;
 }
 
 export interface Conversation {
@@ -28,6 +36,7 @@ export interface ChatRequest {
   conversation_id: string;
   message: string;
   history: HistoryMessage[];
+  include_videos?: boolean;
 }
 
 export interface ChatResponse {
@@ -35,5 +44,6 @@ export interface ChatResponse {
   message: {
     role: "assistant";
     content: string;
+    videos?: TutorialVideo[];
   };
 }
