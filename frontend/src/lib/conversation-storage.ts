@@ -1,5 +1,6 @@
 import type { ChatMessage, Conversation, ConversationSession } from "@/types/chat";
 import { copyVideo, isVideoCurrent, isVideoList } from "./videos.ts";
+import { isStoreLinkList } from "./store-links.ts";
 
 export const CONVERSATION_STORAGE_KEY = "chat-jogos:session:v1";
 
@@ -75,8 +76,10 @@ export function loadConversationSession(
           draft: conversation.draft,
           createdAt: conversation.createdAt,
           updatedAt: conversation.updatedAt,
-          messages: conversation.messages.map(({ id, role, content, videos }) => ({
+          messages: conversation.messages.map(({ id, role, content, videos, store_links }) => ({
             id, role, content,
+            ...(role === "assistant" && isStoreLinkList(store_links) && store_links?.length
+              ? { store_links: store_links.map(({ store, url }) => ({ store, url })) } : {}),
             ...(role === "assistant" && isVideoList(videos) && videos?.length
               ? { videos: videos.filter((video) => isVideoCurrent(video)).map(copyVideo) }
               : {}),

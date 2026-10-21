@@ -17,6 +17,7 @@ from app.catalog.errors import (
 from app.catalog.schemas import (
     CatalogDiscoveryQuery, CatalogGame, CatalogQuery, CatalogSearchResult, StoreLink,
 )
+from app.catalog.trusted_stores import trusted_store
 
 
 TOKEN_URL = "https://id.twitch.tv/oauth2/token"
@@ -35,14 +36,6 @@ FILTER_ALIASES = {
     "platform": {"pc": "PC (Microsoft Windows)", "ps5": "PlayStation 5", "ps4": "PlayStation 4"},
     "genre": {"rpg": "Role-playing (RPG)"},
     "game_mode": {"solo": "Single player", "cooperativo": "Co-operative"},
-}
-STORE_HOSTS = {
-    "store.steampowered.com": "Steam",
-    "gog.com": "GOG", "www.gog.com": "GOG",
-    "store.epicgames.com": "Epic Games", "www.epicgames.com": "Epic Games",
-    "itch.io": "itch.io", "apps.apple.com": "App Store",
-    "play.google.com": "Google Play", "www.xbox.com": "Xbox",
-    "store.playstation.com": "PlayStation", "www.nintendo.com": "Nintendo",
 }
 
 
@@ -68,10 +61,7 @@ def store_links(websites: list[dict] | None) -> list[StoreLink]:
         url = safe_url(website.get("url"))
         if url is None or url in seen:
             continue
-        host = urlsplit(url).hostname
-        store = STORE_HOSTS.get(host)
-        if host.endswith(".itch.io"):
-            store = "itch.io"
+        store = trusted_store(url)
         if store:
             links.append(StoreLink(store=store, url=url))
             seen.add(url)

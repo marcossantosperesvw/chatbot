@@ -13,7 +13,8 @@ from app.catalog.errors import (
     CatalogRateLimitError, CatalogTimeoutError,
 )
 from app.catalog.igdb_client import IGDBClient
-from app.catalog.schemas import CatalogDiscoveryQuery
+from app.catalog.schemas import CatalogDiscoveryQuery, StoreLink
+from app.catalog.trusted_stores import trusted_store
 from app.core.errors import AIProviderError
 from app.rag.retrieval import KnowledgeStore
 from app.videos.schemas import TutorialVideo
@@ -38,6 +39,7 @@ class CatalogContext:
     video_consent: bool = False
     video_calls: int = 0
     video_candidates: dict[str, TutorialVideo] = field(default_factory=dict)
+    store_candidates: dict[str, StoreLink] = field(default_factory=dict)
 
 
 def tool_failure(context, error: Exception) -> str:
@@ -92,7 +94,9 @@ async def search_games(
         for key in ("platforms", "genres", "game_modes"):
             item[key] = [name[:120] for name in item[key][:20]]
         item["name"] = game.name[:200]
-        item["store_links"] = item["store_links"][:2]
+        item["store_links"] = [link for link in item["store_links"] if trusted_store(link["url"]) == link["store"]][:2]
+        for link in item["store_links"]:
+            state.store_candidates[link["url"]] = StoreLink(**link)
         for url in [item["source_url"], *(link["url"] for link in item["store_links"])]:
             if url:
                 state.allowed_urls.add(url)
@@ -113,3 +117,14 @@ def validate_reply_urls(content: str, context: CatalogContext) -> None:
         url = match.group()
         if url not in context.allowed_urls and url.rstrip(".,;:!?)]}") not in context.allowed_urls:
             raise AIProviderError()
+
+
+def selected_store_links(content: str, context: CatalogContext) -> list[StoreLink]:
+    """Autorizar cliques somente para URLs consultadas e mencionadas na resposta."""
+    selected = {}
+    for match in re.finditer(r"https?://[^\s<>\"']+", content, flags=re.IGNORECASE):
+        raw = match.group()
+        url = raw if raw in context.store_candidates else raw.rstrip(".,;:!?)]}")
+        if url in context.store_candidates and trusted_store(url):
+            selected[url] = context.store_candidates[url]
+    return list(selected.values())
