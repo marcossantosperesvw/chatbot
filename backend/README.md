@@ -265,8 +265,9 @@ tecnologias, conceitos e justificativa das decisões, aguardando aprovação.
 Depois da entrega, explique as alterações, o funcionamento, como executar e
 testar, e as melhorias futuras. Cada aprovação autoriza somente a etapa descrita.
 
-Melhorias seguintes: corpus real e avaliação do RAG, fontes estruturadas na interface,
-streaming e implantação. Catálogo e recuperação documental já estão integrados ao agente,
-mas a base RAG ainda não tem documentos reais e começa desativada.
+Melhorias seguintes: avaliação das respostas reais com e sem RAG, fontes estruturadas
+na interface, streaming e implantação. Catálogo e recuperação documental já estão
+integrados ao agente. Há um [lote documental generalista](../docs/knowledge-general.md)
+com testes locais de recuperação; o RAG continua desativado por padrão.
 A evolução de infraestrutura está descrita em
 [Arquitetura](../docs/architecture.md).

@@ -29,7 +29,8 @@ def parser() -> argparse.ArgumentParser:
     query = commands.add_parser("search")
     query.add_argument("--index", type=Path, required=True)
     query.add_argument("--query", required=True)
-    query.add_argument("--game", required=True)
+    query.add_argument("--game", help="Omitir para buscar somente documentos gerais.")
+    query.add_argument("--product", help="Filtro exato de serviço/produto, por exemplo Steam.")
     query.add_argument("--platform")
     query.add_argument("--game-version")
     query.add_argument("--min-score", type=float, default=0.35)
@@ -70,7 +71,8 @@ async def run(args):
     else:
         index = load_index(args.index, allow_synthetic=args.allow_synthetic)
         store = KnowledgeStore(index, min_score=args.min_score)
-        params = KnowledgeQuery(query=args.query, game=args.game, platform=args.platform, game_version=args.game_version)
+        params = KnowledgeQuery(query=args.query, game=args.game, product=args.product,
+                                platform=args.platform, game_version=args.game_version)
         if index.mode == "semantic":
             if not args.allow_paid:
                 raise RagError("Consulta semântica exige --allow-paid; a pergunta será enviada à OpenAI.")

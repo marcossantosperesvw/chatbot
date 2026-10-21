@@ -1,0 +1,12 @@
+{
+  "document_id": "playstation-nuvem",
+  "title": "PlayStation Plus: sincronização e download de saves PS4/PS5",
+  "scope": "general",
+  "game": null,
+  "products": ["PlayStation"],
+  "platforms": ["PS4", "PS5"],
+  "source": "Sony/PlayStation, armazenamento em nuvem do PS Plus no PS5. Síntese autoral da documentação pública; sem manipulação de saves.",
+  "source_url": "https://www.playstation.com/pt-br/support/subscriptions/ps5-ps-plus-cloud-storage/",
+  "reviewed_at": "2026-10-20",
+  "synthetic": false
+}
