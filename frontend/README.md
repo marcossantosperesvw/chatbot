@@ -3,6 +3,17 @@
 Frontend em Next.js, React, TypeScript e Tailwind CSS. A interface conversa
 diretamente com a API FastAPI por HTTP/JSON, usando `POST /api/chat`.
 
+## Tutoriais em vídeo
+
+O chat permite habilitar buscas no YouTube, com autorização explícita ao lado do
+formulário. Um vídeo selecionado aparece com título, canal e player carregado por
+clique, sem autoplay, além de link externo. O anexo acompanha a conversa da sessão,
+mas não é reenviado no histórico da IA. A autorização começa desligada a cada
+recarregamento; nenhum segredo Google fica no frontend.
+
+Veja a [configuração e os testes](../docs/youtube-tutorials.md). A política da
+aplicação está na rota `/privacidade`. Falhas de pesquisa não impedem o texto.
+
 ## Executar localmente
 
 Na pasta `frontend/`, instale as dependências com `npm ci`. Crie seu arquivo

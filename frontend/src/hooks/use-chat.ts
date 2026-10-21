@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer, useRef } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 
 import { sendChatMessage } from "@/lib/api";
 import { createChatRequest, getHistoryError } from "@/lib/chat";
@@ -9,6 +9,7 @@ import { conversationsReducer, createConversation, initialConversationsState } f
 import type { ChatMessage, ChatRequest } from "@/types/chat";
 
 export function useChat() {
+  const [includeVideos, setIncludeVideos] = useState(false);
   const [state, dispatch] = useReducer(conversationsReducer, initialConversationsState);
   const canPersist = useRef(false);
   const inFlight = useRef(false);
@@ -28,8 +29,14 @@ export function useChat() {
 
   useEffect(() => {
     if (!state.session || !canPersist.current) return;
-    const warning = saveConversationSession(state.session);
-    dispatch({ type: "storage-warning", warning });
+    const session = state.session;
+    function persist() {
+      const warning = saveConversationSession(session);
+      dispatch({ type: "storage-warning", warning });
+    }
+    persist();
+    const interval = window.setInterval(persist, 60 * 60 * 1000);
+    return () => window.clearInterval(interval);
   }, [state.session]);
 
   const conversation = state.session?.conversations.find(
@@ -63,6 +70,7 @@ export function useChat() {
 
     try {
       request = createChatRequest(conversationId, conversation.draft, conversation.messages);
+      if (includeVideos) request.include_videos = true;
     } catch (cause) {
       dispatch({
         type: "error",
@@ -111,6 +119,8 @@ export function useChat() {
 
   return {
     conversations: state.session?.conversations ?? [],
+    includeVideos,
+    setIncludeVideos,
     activeConversation: conversation,
     pendingConversationId: state.pending?.conversationId ?? null,
     isReady: state.session !== null,

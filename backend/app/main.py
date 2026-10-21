@@ -17,6 +17,7 @@ from app.rag.config import get_rag_settings
 from app.rag.errors import RagError
 from app.rag.index import load_index
 from app.rag.retrieval import KnowledgeStore
+from app.videos.youtube import YouTubeClient, VideoUnavailable, get_video_settings
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 configure_agent_logging()
@@ -43,11 +44,24 @@ async def lifespan(app: FastAPI):
     except RagError:
         logging.getLogger(__name__).warning("RAG indisponível: confira configuração e índice local.")
     async with httpx.AsyncClient(follow_redirects=False) as http:
+        app.state.videos = None
+        video_maintenance = None
+        try:
+            video_settings = get_video_settings()
+            if video_settings:
+                app.state.videos = YouTubeClient(http, video_settings)
+                video_maintenance = asyncio.create_task(app.state.videos.maintain_cache())
+        except VideoUnavailable:
+            logging.getLogger(__name__).warning("YouTube indisponível: confira a configuração local.")
         app.state.catalog = IGDBClient(http)
         maintenance = asyncio.create_task(app.state.catalog.maintain_token())
         try:
             yield
         finally:
+            if video_maintenance:
+                video_maintenance.cancel()
+                with suppress(asyncio.CancelledError):
+                    await video_maintenance
             maintenance.cancel()
             with suppress(asyncio.CancelledError):
                 await maintenance

@@ -1,0 +1,12 @@
+{
+  "document_id": "steam-remote-play",
+  "title": "Steam Remote Play: transmissão e multiplayer local remoto",
+  "scope": "general",
+  "game": null,
+  "products": ["Steam"],
+  "platforms": ["PC", "macOS", "Android", "iOS"],
+  "source": "Valve, Steam Remote Play. Síntese autoral da documentação pública; distinções de escopo explicitadas, sem teste de streaming.",
+  "source_url": "https://store.steampowered.com/remoteplay",
+  "reviewed_at": "2026-10-20",
+  "synthetic": false
+}

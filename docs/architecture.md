@@ -39,6 +39,7 @@ Fluxo: usuário → frontend → `POST /api/chat` → serviço → agente → Op
 | `backend/app/core/` | Configuração, erros e proteção dos logs |
 | `backend/app/catalog/` | Cliente IGDB, credenciais e normalização dos dados |
 | `backend/app/tools/` | Ferramenta tipada IGDB, orçamento local e URLs permitidas |
+| `backend/app/videos/` | Cliente YouTube opcional, metadados, cache e orçamento |
 | `backend/app/rag/` e `knowledge/` | Ingestão, índice JSON, busca lexical/semântica e documentos curados |
 | `backend/app/conversations/` | Reservado; nenhuma persistência de servidor implementada |
 | `backend/tests/` e `frontend/tests/` | Verificações sem serviços pagos |
@@ -61,14 +62,16 @@ O UUID organiza mensagens, mas não autentica usuários nem protege acesso.
   exigem consulta antes de recomendar títulos e pedem esclarecimento para pedidos
   vagos. Isso precisa de avaliação comportamental, não é garantia determinística.
   URLs HTTP(S) ausentes dos resultados da requisição são rejeitadas pelo backend.
-  Não há busca web, preços ou vídeos. RAG opcional complementa o catálogo com
+  Não há busca web geral ou preços. Tutoriais usam uma ferramenta YouTube opcional,
+  autorizada por mensagem, com anexo estruturado e player por clique. RAG complementa o catálogo com
   documentos, fontes e filtros de jogo/plataforma/versão. Nenhuma compra é executada.
 - Limites atuais: mensagem de 4.000 caracteres, até 50 mensagens anteriores,
   saída de 4.000 caracteres, geração padrão de 800 tokens e timeout de até 25s.
   Caracteres, tokens e custo são medidas diferentes. Não há teto financeiro por usuário.
 - Até duas chamadas de catálogo, cinco jogos por chamada, duas consultas RAG e
   até três trechos por consulta. São cinco rodadas do modelo com índice RAG ativo
-  e três sem ele. A memória de fontes e permissões é criada por requisição.
+  e três sem ele. Com YouTube autorizado/configurado, soma-se uma rodada e até
+  uma busca por mensagem. A memória de fontes e permissões é criada por requisição.
   O timeout total inclui ferramentas e esperas. A descoberta de catálogo filtra
   plataforma/gênero/modo com AND e prioriza volume de avaliações; não é uma busca
   semântica nem garante as melhores recomendações possíveis. Limites e cache do
@@ -91,7 +94,10 @@ Cada implementação exige escopo e aprovação próprios.
 2. **Catálogo externo:** pesquisa independente e integração do agente com filtros
    implementadas. A aprovação das etapas depende de avaliação real pelo estudante.
    Avaliar relevância, esclarecimentos, falhas e distinção entre fatos e inferências.
-3. **Lojas e vídeos:** usar URLs verificadas e embeds permitidos, sem inventar links.
+3. **Lojas e vídeos:** YouTube implementado com busca, validação de incorporação e
+   player na conversa. Configurar a chave e avaliar relevância com APIs reais.
+   [Guia de vídeos](youtube-tutorials.md). Cards de lojas e links clicáveis no
+   texto geral ainda podem ser implementados separadamente.
 4. **Persistência permanente:** somente quando houver requisito de recuperar
    conversas entre sessões; decidir banco, autenticação, retenção e exclusão juntos.
 5. **Deploy e AWS:** AWS é uma opção futura de infraestrutura, não requisito para

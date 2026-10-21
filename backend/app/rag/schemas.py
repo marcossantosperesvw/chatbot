@@ -1,7 +1,7 @@
 """Contratos da ingestão local, independentes de embeddings e do agente."""
 
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import (
     BaseModel, ConfigDict, Field, HttpUrl, StrictBool, StringConstraints,
@@ -22,13 +22,23 @@ class DocumentMetadata(BaseModel):
 
     document_id: DocumentId
     title: Text
-    game: Text
+    scope: Literal["game", "general"] = "game"
+    game: Text | None = None
+    products: tuple[Text, ...] = ()
     platforms: tuple[Text, ...] = ()
     game_version: Text | None = None
     source: Text
     source_url: HttpUrl | None = None
     reviewed_at: date
     synthetic: StrictBool  # Obrigatório: exemplos fictícios precisam ser explícitos.
+
+    @model_validator(mode="after")
+    def validate_scope(self):
+        if self.scope == "game" and self.game is None:
+            raise ValueError("Documento de jogo exige game.")
+        if self.scope == "general" and (self.game is not None or self.game_version is not None):
+            raise ValueError("Documento geral não pode definir jogo ou versão de jogo.")
+        return self
 
     @field_validator("source_url")
     @classmethod

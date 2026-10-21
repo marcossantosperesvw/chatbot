@@ -9,6 +9,7 @@ from app.core.config import AISettings
 from app.core.errors import AIConfigurationError
 from app.tools.catalog import CatalogContext, search_games
 from app.tools.knowledge import search_knowledge
+from app.tools.videos import search_videos
 
 
 INSTRUCTIONS_PATH = Path(__file__).resolve().with_suffix(".md")
@@ -25,7 +26,7 @@ def load_instructions() -> str:
     return instructions
 
 
-def create_game_agent(settings: AISettings, client: AsyncOpenAI) -> Agent[CatalogContext]:
+def create_game_agent(settings: AISettings, client: AsyncOpenAI, *, enable_videos=False) -> Agent[CatalogContext]:
     return Agent(
         name="Chat Jogos",
         instructions=load_instructions(),
@@ -33,5 +34,5 @@ def create_game_agent(settings: AISettings, client: AsyncOpenAI) -> Agent[Catalo
         model_settings=ModelSettings(
             max_tokens=settings.max_output_tokens, store=False, parallel_tool_calls=False,
         ),
-        tools=[search_games, search_knowledge],
+        tools=[search_games, search_knowledge] + ([search_videos] if enable_videos else []),
     )

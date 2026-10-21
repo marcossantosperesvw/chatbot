@@ -6,7 +6,7 @@ import unicodedata
 from collections import Counter
 
 from openai import AsyncOpenAI
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.rag.embeddings import cosine, embed_texts
 from app.rag.errors import RagError
@@ -29,9 +29,16 @@ def tokens(text: str) -> list[str]:
 class KnowledgeQuery(BaseModel):
     model_config = ConfigDict(extra="forbid")
     query: Text = Field(max_length=500)
-    game: Text = Field(max_length=200)
+    game: Text | None = Field(default=None, max_length=200)
+    product: Text | None = Field(default=None, max_length=120)
     platform: Text | None = Field(default=None, max_length=120)
     game_version: Text | None = Field(default=None, max_length=120)
+
+    @model_validator(mode="after")
+    def validate_version(self):
+        if self.game_version is not None and self.game is None:
+            raise ValueError("Versão de jogo exige nome do jogo.")
+        return self
 
 
 class SearchHit(BaseModel):
@@ -58,7 +65,13 @@ class KnowledgeStore:
         indices = []
         for position, passage in enumerate(self.index.passages):
             meta = passage.chunk.metadata
-            if normalize(meta.game) != normalize(params.game):
+            # game=null seleciona apenas documentação geral. Não misturar evidências
+            # genéricas com confirmação de recursos de um título específico.
+            if params.game is None and meta.scope != "general":
+                continue
+            if params.game is not None and (meta.scope != "game" or normalize(meta.game) != normalize(params.game)):
+                continue
+            if params.product and normalize(params.product) not in {normalize(p) for p in meta.products}:
                 continue
             if params.platform and normalize(params.platform) not in {normalize(p) for p in meta.platforms}:
                 continue
@@ -74,7 +87,7 @@ class KnowledgeStore:
             vector = (await embed_texts(client, self.index.embedding_model, [params.query]))[0]
             scores = [(position, cosine(vector, self.index.passages[position].vector)) for position in indices]
         else:
-            query_terms = set(tokens(params.query)) - set(tokens(params.game))
+            query_terms = set(tokens(params.query)) - set(tokens(params.game or ""))
             for position in indices:
                 score = 0.0
                 for term in query_terms:

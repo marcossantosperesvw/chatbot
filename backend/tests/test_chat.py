@@ -6,15 +6,16 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api import chat as chat_api
+from app.api.schemas import AssistantMessage
 from app.main import app
 
 
 @pytest.fixture
 def client(monkeypatch):
-    async def reply(request, *, catalog, knowledge):
+    async def reply(request, *, catalog, knowledge, videos):
         assert catalog is app.state.catalog
         assert knowledge is app.state.knowledge
-        return f"Resposta de teste: «{request.message[:100]}»"
+        return AssistantMessage(content=f"Resposta de teste: «{request.message[:100]}»")
 
     monkeypatch.setattr(chat_api, "generate_reply", reply)
     with TestClient(app) as test_client:
@@ -135,7 +136,7 @@ def test_rejects_malformed_json(client):
 
 
 def test_returns_generic_error_when_service_fails(client, payload, monkeypatch):
-    async def failing_reply(request, *, catalog, knowledge):
+    async def failing_reply(request, *, catalog, knowledge, videos):
         raise RuntimeError("Detalhe interno que não deve aparecer na resposta.")
 
     monkeypatch.setattr(chat_api, "generate_reply", failing_reply)

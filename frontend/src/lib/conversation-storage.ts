@@ -1,4 +1,5 @@
 import type { ChatMessage, Conversation, ConversationSession } from "@/types/chat";
+import { copyVideo, isVideoCurrent, isVideoList } from "./videos.ts";
 
 export const CONVERSATION_STORAGE_KEY = "chat-jogos:session:v1";
 
@@ -74,7 +75,12 @@ export function loadConversationSession(
           draft: conversation.draft,
           createdAt: conversation.createdAt,
           updatedAt: conversation.updatedAt,
-          messages: conversation.messages.map(({ id, role, content }) => ({ id, role, content })),
+          messages: conversation.messages.map(({ id, role, content, videos }) => ({
+            id, role, content,
+            ...(role === "assistant" && isVideoList(videos) && videos?.length
+              ? { videos: videos.filter((video) => isVideoCurrent(video)).map(copyVideo) }
+              : {}),
+          })),
         })),
       };
       return { session, warning: null, canPersist: true };
@@ -90,7 +96,14 @@ export function saveConversationSession(
   getStorage: StorageAccess = () => window.sessionStorage,
 ): string | null {
   try {
-    getStorage().setItem(CONVERSATION_STORAGE_KEY, JSON.stringify(session));
+    const sanitized = { ...session, conversations: session.conversations.map((conversation) => ({
+      ...conversation, messages: conversation.messages.map((message) => {
+        if (message.videos === undefined) return message;
+        return { ...message, videos: message.role === "assistant" && isVideoList(message.videos)
+          ? (message.videos ?? []).filter((video) => isVideoCurrent(video)).map(copyVideo) : [] };
+      }),
+    })) };
+    getStorage().setItem(CONVERSATION_STORAGE_KEY, JSON.stringify(sanitized));
     return null;
   } catch {
     return "Não foi possível salvar a sessão. As conversas continuam em memória; evite atualizar a página para não perder alterações.";

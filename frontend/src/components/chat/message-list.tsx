@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import type { ChatMessage } from "@/types/chat";
+import { TutorialVideo } from "./tutorial-video";
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -47,6 +48,9 @@ export function MessageList({ messages, isSending }: MessageListProps) {
               >
                 {message.content}
               </p>
+              {!isUser && message.videos?.slice(0, 1).map((video) => (
+                <TutorialVideo key={video.video_id} video={video} />
+              ))}
             </li>
           );
         })}

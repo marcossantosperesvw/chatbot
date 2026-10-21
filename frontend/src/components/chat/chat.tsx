@@ -157,6 +157,16 @@ export function Chat() {
             />
           )}
 
+          <div className="border-t border-slate-800 px-4 py-2 text-xs leading-5 text-slate-400 sm:px-8">
+            <label className="flex items-start gap-2">
+              <input type="checkbox" checked={chat.includeVideos} disabled={chat.isSending || chat.isWaitingForOtherConversation}
+                onChange={(event) => chat.setIncludeVideos(event.target.checked)} className="mt-1 accent-indigo-500" />
+              <span>Incluir tutoriais do YouTube quando úteis. Autorizo o envio dos termos relevantes da pergunta ao Google e aceito os{" "}
+                <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="underline">Termos do YouTube</a>{" "}
+                e a <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="underline">política de privacidade</a>.
+              </span>
+            </label>
+          </div>
           <ChatComposer
             key={`composer-${chat.activeConversation?.id}`}
             draft={chat.draft}

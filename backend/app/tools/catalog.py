@@ -16,6 +16,8 @@ from app.catalog.igdb_client import IGDBClient
 from app.catalog.schemas import CatalogDiscoveryQuery
 from app.core.errors import AIProviderError
 from app.rag.retrieval import KnowledgeStore
+from app.videos.schemas import TutorialVideo
+from app.videos.youtube import YouTubeClient
 
 
 MAX_CATALOG_CALLS = 2
@@ -32,6 +34,10 @@ class CatalogContext:
     knowledge_calls: int = 0
     allowed_citations: set[str] = field(default_factory=set)
     embedding_client: AsyncOpenAI | None = None
+    videos: YouTubeClient | None = None
+    video_consent: bool = False
+    video_calls: int = 0
+    video_candidates: dict[str, TutorialVideo] = field(default_factory=dict)
 
 
 def tool_failure(context, error: Exception) -> str:
