@@ -11,7 +11,7 @@ from app.catalog.igdb_client import IGDBClient
 from app.core.config import get_ai_settings
 from app.core.errors import AIProviderError, AITimeoutError
 from app.rag.retrieval import KnowledgeStore
-from app.tools.catalog import CatalogContext, validate_reply_urls
+from app.tools.catalog import CatalogContext, selected_store_links, validate_reply_urls
 from app.tools.knowledge import validate_reply_citations
 from app.tools.videos import extract_video
 from app.videos.youtube import YouTubeClient
@@ -56,4 +56,5 @@ async def generate_reply(
     validate_reply_urls(content, context)
     validate_reply_citations(content, context)
     content, attachments = extract_video(content, context)
-    return AssistantMessage(content=content, videos=attachments)
+    return AssistantMessage(content=content, videos=attachments,
+                            store_links=selected_store_links(content, context))

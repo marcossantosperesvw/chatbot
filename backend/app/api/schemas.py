@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StringConstraints
 
 from app.videos.schemas import TutorialVideo
+from app.catalog.schemas import StoreLink
 
 
 MessageContent = Annotated[
@@ -39,6 +40,7 @@ class AssistantMessage(BaseModel):
     role: Literal["assistant"] = "assistant"
     content: MessageContent
     videos: list[TutorialVideo] = Field(default_factory=list, max_length=1)
+    store_links: list[StoreLink] = Field(default_factory=list, max_length=20)
 
 
 class ChatResponse(BaseModel):

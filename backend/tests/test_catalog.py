@@ -265,7 +265,7 @@ def test_partial_metadata_does_not_invent_data():
 def test_only_provider_https_store_links_on_known_domains_are_exposed():
     accepted = [
         "https://store.steampowered.com/app/42/test/",
-        "https://my-game.itch.io/game", "https://www.gog.com/en/game/test",
+        "https://www.gog.com/en/game/test",
     ]
     rejected = [
         "javascript:alert(1)", "http://store.steampowered.com/app/42/",

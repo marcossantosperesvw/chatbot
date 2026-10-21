@@ -1,5 +1,6 @@
 import type { ChatRequest, ChatResponse } from "@/types/chat";
 import { isVideoList } from "./videos.ts";
+import { isStoreLinkList } from "./store-links.ts";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
@@ -19,7 +20,8 @@ function isChatResponse(value: unknown): value is ChatResponse {
     "content" in message &&
     typeof message.content === "string" &&
     message.content.trim().length > 0 &&
-    isVideoList("videos" in message ? message.videos : undefined)
+    isVideoList("videos" in message ? message.videos : undefined) &&
+    isStoreLinkList("store_links" in message ? message.store_links : undefined)
   );
 }
 

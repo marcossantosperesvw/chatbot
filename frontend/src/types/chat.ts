@@ -8,6 +8,12 @@ export interface HistoryMessage {
 export interface ChatMessage extends HistoryMessage {
   id: string;
   videos?: TutorialVideo[];
+  store_links?: StoreLink[];
+}
+
+export interface StoreLink {
+  store: string;
+  url: string;
 }
 
 export interface TutorialVideo {
@@ -45,5 +51,6 @@ export interface ChatResponse {
     role: "assistant";
     content: string;
     videos?: TutorialVideo[];
+    store_links?: StoreLink[];
   };
 }

@@ -48,6 +48,9 @@ deve conter credenciais. Chaves da OpenAI pertencem exclusivamente ao backend.
 - Menu lateral com títulos automáticos, seleção ativa e conversas mais recentes primeiro.
 - Envio pelo botão ou por Enter; Shift+Enter insere uma quebra de linha.
 - Sugestões iniciais que preenchem o campo sem enviar automaticamente.
+- Apresentação inicial com exemplos para descobrir jogos, instalar inicializadores,
+  entender serviços de plataforma e conectar controles. Os exemplos não ativam
+  buscas de vídeos: a autorização do YouTube continua separada e desligada por padrão.
 - Indicação de carregamento e bloqueio de envios simultâneos.
 - Erros em português, preservando o rascunho e as mensagens anteriores.
 - Nova conversa sem apagar as anteriores; recuperação pelo menu lateral.
