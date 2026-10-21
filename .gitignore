@@ -62,3 +62,5 @@ wheels/
 
 # AWS SAM
 .aws-sam/
+
+docs/rag-drafts/

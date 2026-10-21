@@ -2,7 +2,7 @@
 
 Esta pasta contém o primeiro lote real de orientações gerais sobre jogos,
 plataformas e serviços. São sínteses autorais de fontes oficiais, consultadas em
-19–20/10/2026 e revisadas documentalmente em 20/10/2026. Não foram executados
+19–20/10/2026 e revisadas documentalmente em 20/10/2026. Não foram executados 
 procedimentos nos dispositivos nem testados jogos individuais.
 O chatbot consulta um índice construído a partir dos documentos, se o RAG estiver
 habilitado; não lê esta pasta a cada mensagem. Este README é excluído da indexação.
