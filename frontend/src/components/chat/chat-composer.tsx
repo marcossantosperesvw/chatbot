@@ -69,7 +69,7 @@ export function ChatComposer({
             disabled={isSending || isBlocked}
             aria-invalid={isTooLong}
             aria-describedby={`chat-help chat-count${error ? " chat-error" : ""}`}
-            placeholder="Sobre qual jogo vamos conversar?"
+            placeholder="Peça um jogo, um tutorial ou ajuda com sua plataforma…"
             className="max-h-44 min-h-20 flex-1 resize-y rounded-xl bg-transparent px-3 py-2 text-sm leading-6 text-slate-100 outline-none placeholder:text-slate-500 disabled:opacity-60"
             onChange={(event) => onDraftChange(event.target.value)}
             onKeyDown={(event) => {
